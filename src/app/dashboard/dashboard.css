@@ -1,0 +1,150 @@
+.dashboard {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 1.25rem;
+  padding: 1.25rem 0 2rem;
+}
+
+.dashboard__sidebar,
+.dashboard__hero,
+.dashboard__section {
+  padding: 1.25rem;
+}
+
+.dashboard__sidebar {
+  position: sticky;
+  top: 90px;
+  height: fit-content;
+}
+
+.dashboard__content {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard__sidebarTop,
+.dashboard__hero,
+.dashboard__heroActions,
+.dashboard__actions,
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dashboard__sidebarTop,
+.dashboard__hero,
+.dashboard__actions,
+.section-heading {
+  justify-content: space-between;
+}
+
+.dashboard__hero {
+  flex-wrap: wrap;
+}
+
+.dashboard__hero h1,
+.dashboard__sidebarTop h2 {
+  margin: 0;
+  font-family: "Times New Roman", Georgia, serif;
+}
+
+.dashboard__hero h1 {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 0.95;
+}
+
+.dashboard__hero p,
+.dashboard-state {
+  color: var(--muted);
+}
+
+.dashboard__heroActions,
+.dashboard__actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dashboard__section {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+}
+
+.section-heading {
+  margin-bottom: 1rem;
+}
+
+.tree {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 1rem;
+}
+
+.tree__item,
+.tree__root {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  min-height: 42px;
+  border-radius: 14px;
+}
+
+.tree__root,
+.tree__label,
+.collection-card__title,
+.post-card__actions button,
+.collection-card__actions button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+}
+
+.tree__item--active,
+.tree__root.tree__item--active {
+  background: var(--accent-soft);
+}
+
+.tree__label {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.collection-card__title {
+  font-size: 1.1rem;
+  text-align: left;
+}
+
+.collection-card__top,
+.post-card__top {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.post-card__platform {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.dashboard-state {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+}
+
+@media (max-width: 900px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard__sidebar {
+    position: static;
+  }
+}
