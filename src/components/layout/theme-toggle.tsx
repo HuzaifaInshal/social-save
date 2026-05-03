@@ -1,14 +1,18 @@
 "use client";
 
 import { useTheme } from "@/components/providers/theme-provider";
-import { Button } from "@/components/ui/button";
 
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <Button variant="ghost" onClick={toggleTheme}>
-      {theme === "light" ? "Dark mode" : "Light mode"}
-    </Button>
+    <button
+      className="btn btn--ghost"
+      onClick={toggleTheme}
+      aria-label="Toggle theme"
+      style={{ padding: "0.45rem 0.6rem", fontSize: "1rem" }}
+    >
+      {theme === "light" ? "🌙" : "☀️"}
+    </button>
   );
 }

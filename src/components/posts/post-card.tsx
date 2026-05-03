@@ -2,6 +2,15 @@
 
 import { platformLabels } from "@/lib/constants";
 import { PostItem } from "@/types";
+import { cn } from "@/lib/utils";
+
+const platformEmoji: Record<string, string> = {
+  instagram: "📸",
+  youtube: "▶",
+  tiktok: "♪",
+  facebook: "f",
+  other: "🔗",
+};
 
 type PostCardProps = {
   post: PostItem;
@@ -15,27 +24,44 @@ export function PostCard({ post, checked, onToggleSelect, onEdit, onDelete }: Po
   const host = safeHost(post.link);
 
   return (
-    <article className="post-card card">
-      <div className="post-card__top">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={() => onToggleSelect(post.id)}
-          aria-label={`Select ${post.title}`}
-        />
-        <span className="post-card__platform">{platformLabels[post.platform]}</span>
+    <article className={cn("post-card", checked && "post-card--selected")}>
+      <div className="post-card__banner" data-platform={post.platform}>
+        <label className="selector post-card__select" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={() => onToggleSelect(post.id)}
+            aria-label={`Select ${post.title}`}
+          />
+          <span className="selector__box" />
+        </label>
+        <div className="post-card__banner-icon">
+          {platformEmoji[post.platform] ?? "🔗"}
+        </div>
       </div>
-      <div className="post-preview">
-        <strong>{post.title}</strong>
-        <p>{post.description || "No description added yet."}</p>
-        <span>{host}</span>
+
+      <div className="post-card__body">
+        <span className="post-card__platform-badge">{platformLabels[post.platform]}</span>
+        <p className="post-card__title">{post.title}</p>
+        {post.description && (
+          <p className="post-card__desc">{post.description}</p>
+        )}
       </div>
-      <div className="post-card__actions">
-        <a href={post.link} target="_blank" rel="noreferrer">
-          Open post
-        </a>
-        <button onClick={() => onEdit(post)}>Edit</button>
-        <button onClick={() => onDelete(post)}>Delete</button>
+
+      <div className="post-card__footer">
+        <span className="post-card__host">{host}</span>
+        <div className="post-card__actions">
+          <a
+            href={post.link}
+            target="_blank"
+            rel="noreferrer"
+            className="card-action-btn"
+          >
+            Open
+          </a>
+          <button className="card-action-btn" onClick={() => onEdit(post)}>Edit</button>
+          <button className="card-action-btn card-action-btn--danger" onClick={() => onDelete(post)}>Delete</button>
+        </div>
       </div>
     </article>
   );
@@ -45,6 +71,6 @@ function safeHost(link: string) {
   try {
     return new URL(link).hostname.replace("www.", "");
   } catch {
-    return "Invalid URL";
+    return link;
   }
 }
