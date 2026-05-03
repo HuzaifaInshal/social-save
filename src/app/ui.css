@@ -121,6 +121,107 @@
   min-height: 90px;
 }
 
+/* Bulk upload tabs */
+.bulk-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 3px;
+}
+
+.bulk-tab {
+  flex: 1;
+  padding: 0.4rem 0.75rem;
+  border-radius: calc(var(--radius) - 2px);
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.bulk-tab:hover {
+  color: var(--text);
+}
+
+.bulk-tab--active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.field__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bulk-counter {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent-2);
+  background: var(--accent-glow);
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+}
+
+
+.field__select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  text-align: left;
+}
+
+.field__select-trigger[data-placeholder] .field__select-value {
+  color: var(--text-3);
+}
+
+.field__select-trigger:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.field__select-icon {
+  color: var(--text-3);
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.field__select-content {
+  width: var(--radix-select-trigger-width);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  z-index: 200;
+}
+
+.field__select-item {
+  padding: 0.55rem 0.9rem;
+  font-size: 0.92rem;
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+.field__select-item[data-highlighted] {
+  background: var(--accent-glow);
+  color: var(--accent-2);
+}
+
+.field__select-item[data-state="checked"] {
+  color: var(--accent-2);
+  font-weight: 500;
+}
+
 /* Checkbox */
 .selector {
   position: relative;
@@ -233,4 +334,61 @@
 .post-preview span {
   color: var(--text-2);
   font-size: 0.85rem;
+}
+
+/* Toast */
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1.1rem;
+  border-radius: var(--radius-lg);
+  font-size: 0.88rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  animation: toast-in 0.2s ease;
+  pointer-events: auto;
+}
+
+.toast--error {
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: var(--red);
+}
+
+.toast__icon {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Spinner */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }

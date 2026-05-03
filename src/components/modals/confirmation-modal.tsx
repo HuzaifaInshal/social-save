@@ -9,6 +9,7 @@ type ConfirmationModalProps = {
   confirmLabel?: string;
   confirmVariant?: "primary" | "danger";
   extra?: React.ReactNode;
+  loading?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 };
@@ -19,6 +20,7 @@ export function ConfirmationModal({
   confirmLabel = "Confirm",
   confirmVariant = "primary",
   extra,
+  loading,
   onCancel,
   onConfirm,
 }: ConfirmationModalProps) {
@@ -26,13 +28,14 @@ export function ConfirmationModal({
     <Modal
       title={title}
       onClose={onCancel}
+      loading={loading}
       footer={
         <>
-          <Button variant="ghost" onClick={onCancel}>
+          <Button variant="ghost" onClick={onCancel} disabled={loading}>
             Cancel
           </Button>
-          <Button variant={confirmVariant} onClick={onConfirm}>
-            {confirmLabel}
+          <Button variant={confirmVariant} onClick={onConfirm} disabled={loading}>
+            {loading ? "Working…" : confirmLabel}
           </Button>
         </>
       }

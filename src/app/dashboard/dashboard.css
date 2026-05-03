@@ -55,6 +55,9 @@
   flex: 1;
   padding: 0.75rem 0.75rem 0;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .sidebar__section-label {
@@ -64,6 +67,7 @@
   text-transform: uppercase;
   color: var(--text-3);
   padding: 0.5rem 0.5rem 0.35rem;
+  text-align: left;
 }
 
 .sidebar__all-btn {
@@ -192,6 +196,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: left;
 }
 
 .tree__item-count {
@@ -244,6 +249,9 @@
   color: var(--text-3);
   font-size: 0.85rem;
   pointer-events: none;
+  flex-shrink: 0;
+  line-height: 1;
+  display: flex;
 }
 
 .dashboard-search input {

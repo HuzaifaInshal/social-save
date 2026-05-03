@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  bulkCreateLinks,
   bulkCreatePosts,
   createCollection,
   createPost,
@@ -17,6 +18,8 @@ import { ConfirmationModal } from "@/components/modals/confirmation-modal";
 import { MoveModal } from "@/components/modals/move-modal";
 import { BulkUploadModal } from "@/components/posts/bulk-upload-modal";
 import { PostFormModal } from "@/components/posts/post-form-modal";
+import { SelectInput } from "@/components/ui/field";
+import { useToast } from "@/components/ui/toast";
 import { useState } from "react";
 
 export type ModalState =
@@ -51,19 +54,35 @@ export function DashboardModals({
   onResetSelection,
   onCurrentCollectionRemoved,
 }: DashboardModalsProps) {
+  const { showError } = useToast();
+  const [loading, setLoading] = useState(false);
+
   if (!modal) return null;
 
-  const submitCollection = async (values: CollectionFormValues, collectionId?: string) => {
-    if (collectionId) await updateCollection(collectionId, values);
-    else await createCollection(ownerId, values);
-    onClose();
+  const run = async (fn: () => Promise<void>) => {
+    setLoading(true);
+    try {
+      await fn();
+    } catch (err) {
+      showError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const submitPost = async (values: PostFormValues, postId?: string) => {
-    if (postId) await updatePost(postId, values);
-    else await createPost(ownerId, values);
-    onClose();
-  };
+  const submitCollection = (values: CollectionFormValues, collectionId?: string) =>
+    run(async () => {
+      if (collectionId) await updateCollection(collectionId, values);
+      else await createCollection(ownerId, values);
+      onClose();
+    });
+
+  const submitPost = (values: PostFormValues, postId?: string) =>
+    run(async () => {
+      if (postId) await updatePost(postId, values);
+      else await createPost(ownerId, values);
+      onClose();
+    });
 
   if (modal.type === "createCollection") {
     return (
@@ -71,6 +90,7 @@ export function DashboardModals({
         title="Create collection"
         collections={collections}
         initialValues={{ title: "", description: "", parentId: modal.parentId }}
+        loading={loading}
         onClose={onClose}
         onSubmit={(values) => submitCollection(values)}
       />
@@ -84,6 +104,7 @@ export function DashboardModals({
         collections={collections}
         excludedIds={[modal.collection.id]}
         initialValues={modal.collection}
+        loading={loading}
         onClose={onClose}
         onSubmit={(values) => submitCollection(values, modal.collection.id)}
       />
@@ -96,6 +117,7 @@ export function DashboardModals({
         title="Add post"
         collections={collections}
         initialValues={{ title: "", description: "", link: "", collectionId: modal.collectionId }}
+        loading={loading}
         onClose={onClose}
         onSubmit={(values) => submitPost(values)}
       />
@@ -108,6 +130,7 @@ export function DashboardModals({
         title="Edit post"
         collections={collections}
         initialValues={modal.post}
+        loading={loading}
         onClose={onClose}
         onSubmit={(values) => submitPost(values, modal.post.id)}
       />
@@ -117,11 +140,20 @@ export function DashboardModals({
   if (modal.type === "bulkUpload") {
     return (
       <BulkUploadModal
+        loading={loading}
         onClose={onClose}
-        onSubmit={async (value) => {
-          await bulkCreatePosts(ownerId, currentCollectionId, value);
-          onClose();
-        }}
+        onSubmitLinks={(value) =>
+          run(async () => {
+            await bulkCreateLinks(ownerId, currentCollectionId, value);
+            onClose();
+          })
+        }
+        onSubmitPosts={(value) =>
+          run(async () => {
+            await bulkCreatePosts(ownerId, currentCollectionId, value);
+            onClose();
+          })
+        }
       />
     );
   }
@@ -132,12 +164,15 @@ export function DashboardModals({
         title="Move posts"
         label="Choose destination"
         collections={collections}
+        loading={loading}
         onClose={onClose}
-        onSubmit={async (targetId) => {
-          await movePosts(modal.postIds, targetId);
-          onClose();
-          onResetSelection();
-        }}
+        onSubmit={(targetId) =>
+          run(async () => {
+            await movePosts(modal.postIds, targetId);
+            onClose();
+            onResetSelection();
+          })
+        }
       />
     );
   }
@@ -149,12 +184,15 @@ export function DashboardModals({
         label="Choose new parent"
         collections={collections}
         excludedIds={modal.collectionIds}
+        loading={loading}
         onClose={onClose}
-        onSubmit={async (targetId) => {
-          await moveCollections(modal.collectionIds, targetId, collections);
-          onClose();
-          onResetSelection();
-        }}
+        onSubmit={(targetId) =>
+          run(async () => {
+            await moveCollections(modal.collectionIds, targetId, collections);
+            onClose();
+            onResetSelection();
+          })
+        }
       />
     );
   }
@@ -166,13 +204,15 @@ export function DashboardModals({
         description="This action permanently removes the selected posts."
         confirmLabel="Delete posts"
         confirmVariant="danger"
+        loading={loading}
         onCancel={onClose}
-        onConfirm={() => {
-          void deletePosts(modal.postIds).then(() => {
+        onConfirm={() =>
+          run(async () => {
+            await deletePosts(modal.postIds);
             onClose();
             onResetSelection();
-          });
-        }}
+          })
+        }
       />
     );
   }
@@ -182,28 +222,39 @@ export function DashboardModals({
       collections={collections}
       posts={posts}
       collectionIds={modal.collectionIds}
+      loading={loading}
       onClose={onClose}
-      onDone={() => {
-        onClose();
-        onResetSelection();
-        onCurrentCollectionRemoved(modal.collectionIds);
-      }}
+      onConfirm={(movePostsToId) =>
+        run(async () => {
+          const targetId = movePostsToId === "root" ? null : movePostsToId;
+          await deleteCollections(
+            modal.collectionIds,
+            collections,
+            posts,
+            movePostsToId === "delete" ? undefined : targetId,
+          );
+          onClose();
+          onResetSelection();
+          onCurrentCollectionRemoved(modal.collectionIds);
+        })
+      }
     />
   );
 }
 
 function DeleteCollectionsFlow({
   collections,
-  posts,
   collectionIds,
+  loading,
   onClose,
-  onDone,
+  onConfirm,
 }: {
   collections: CollectionItem[];
   posts: PostItem[];
   collectionIds: string[];
+  loading: boolean;
   onClose: () => void;
-  onDone: () => void;
+  onConfirm: (movePostsToId: string) => void;
 }) {
   const [movePostsToId, setMovePostsToId] = useState("delete");
 
@@ -213,25 +264,23 @@ function DeleteCollectionsFlow({
       description="Deleting a collection also affects all nested collections. You can move the contained posts first or delete everything together."
       confirmLabel="Delete collections"
       confirmVariant="danger"
+      loading={loading}
       onCancel={onClose}
-      onConfirm={() => {
-        const targetId = movePostsToId === "root" ? null : movePostsToId;
-        void deleteCollections(collectionIds, collections, posts, movePostsToId === "delete" ? undefined : targetId).then(onDone);
-      }}
+      onConfirm={() => onConfirm(movePostsToId)}
       extra={
         <label className="field">
           <span className="field__label">Move posts before deleting</span>
-          <select value={movePostsToId} onChange={(event) => setMovePostsToId(event.target.value)} className="field__control">
-            <option value="delete">Delete posts with collections</option>
-            <option value="root">Move posts to root level</option>
-            {collections
-              .filter((collection) => !collectionIds.includes(collection.id))
-              .map((collection) => (
-                <option key={collection.id} value={collection.id}>
-                  {collection.title}
-                </option>
-              ))}
-          </select>
+          <SelectInput
+            value={movePostsToId}
+            onValueChange={setMovePostsToId}
+            options={[
+              { value: "delete", label: "Delete posts with collections" },
+              { value: "root", label: "Move posts to root level" },
+              ...collections
+                .filter((c) => !collectionIds.includes(c.id))
+                .map((c) => ({ value: c.id, label: c.title })),
+            ]}
+          />
         </label>
       }
     />

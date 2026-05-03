@@ -11,6 +11,7 @@ type CollectionFormModalProps = {
   collections: CollectionItem[];
   initialValues: CollectionFormValues;
   excludedIds?: string[];
+  loading?: boolean;
   onClose: () => void;
   onSubmit: (values: CollectionFormValues) => Promise<void> | void;
 };
@@ -20,6 +21,7 @@ export function CollectionFormModal({
   collections,
   initialValues,
   excludedIds = [],
+  loading,
   onClose,
   onSubmit,
 }: CollectionFormModalProps) {
@@ -31,12 +33,15 @@ export function CollectionFormModal({
     <Modal
       title={title}
       onClose={onClose}
+      loading={loading}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={() => void onSubmit(values)}>Save collection</Button>
+          <Button onClick={() => void onSubmit(values)} disabled={loading}>
+            {loading ? "Saving…" : "Save collection"}
+          </Button>
         </>
       }
     >
@@ -59,17 +64,12 @@ export function CollectionFormModal({
         <FieldWrapper label="Parent collection">
           <SelectInput
             value={values.parentId ?? ""}
-            onChange={(event) =>
-              setValues((current) => ({ ...current, parentId: event.target.value || null }))
-            }
-          >
-            <option value="">Root level</option>
-            {options.map((collection) => (
-              <option key={collection.id} value={collection.id}>
-                {collection.title}
-              </option>
-            ))}
-          </SelectInput>
+            onValueChange={(v) => setValues((current) => ({ ...current, parentId: v || null }))}
+            options={[
+              { value: "", label: "Root level" },
+              ...options.map((c) => ({ value: c.id, label: c.title })),
+            ]}
+          />
         </FieldWrapper>
       </div>
     </Modal>

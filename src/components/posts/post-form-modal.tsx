@@ -10,6 +10,7 @@ type PostFormModalProps = {
   title: string;
   collections: CollectionItem[];
   initialValues: PostFormValues;
+  loading?: boolean;
   onClose: () => void;
   onSubmit: (values: PostFormValues) => Promise<void> | void;
 };
@@ -18,6 +19,7 @@ export function PostFormModal({
   title,
   collections,
   initialValues,
+  loading,
   onClose,
   onSubmit,
 }: PostFormModalProps) {
@@ -27,12 +29,15 @@ export function PostFormModal({
     <Modal
       title={title}
       onClose={onClose}
+      loading={loading}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={() => void onSubmit(values)}>Save post</Button>
+          <Button onClick={() => void onSubmit(values)} disabled={loading}>
+            {loading ? "Saving…" : "Save post"}
+          </Button>
         </>
       }
     >
@@ -61,17 +66,12 @@ export function PostFormModal({
         <FieldWrapper label="Collection">
           <SelectInput
             value={values.collectionId ?? ""}
-            onChange={(event) =>
-              setValues((current) => ({ ...current, collectionId: event.target.value || null }))
-            }
-          >
-            <option value="">Root level</option>
-            {collections.map((collection) => (
-              <option key={collection.id} value={collection.id}>
-                {collection.title}
-              </option>
-            ))}
-          </SelectInput>
+            onValueChange={(v) => setValues((current) => ({ ...current, collectionId: v || null }))}
+            options={[
+              { value: "", label: "Root level" },
+              ...collections.map((c) => ({ value: c.id, label: c.title })),
+            ]}
+          />
         </FieldWrapper>
       </div>
     </Modal>

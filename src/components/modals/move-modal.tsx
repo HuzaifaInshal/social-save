@@ -12,6 +12,7 @@ type MoveModalProps = {
   collections: CollectionItem[];
   excludedIds?: string[];
   includeRoot?: boolean;
+  loading?: boolean;
   onClose: () => void;
   onSubmit: (targetId: string | null) => Promise<void> | void;
 };
@@ -22,6 +23,7 @@ export function MoveModal({
   collections,
   excludedIds = [],
   includeRoot = true,
+  loading,
   onClose,
   onSubmit,
 }: MoveModalProps) {
@@ -31,26 +33,29 @@ export function MoveModal({
     <Modal
       title={title}
       onClose={onClose}
+      loading={loading}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={() => void onSubmit(targetId || null)}>Move</Button>
+          <Button onClick={() => void onSubmit(targetId || null)} disabled={loading}>
+            {loading ? "Moving…" : "Move"}
+          </Button>
         </>
       }
     >
       <FieldWrapper label={label}>
-        <SelectInput value={targetId} onChange={(event) => setTargetId(event.target.value)}>
-          {includeRoot ? <option value="">Root level</option> : null}
-          {collections
-            .filter((collection) => !excludedIds.includes(collection.id))
-            .map((collection) => (
-              <option key={collection.id} value={collection.id}>
-                {collection.title}
-              </option>
-            ))}
-        </SelectInput>
+        <SelectInput
+          value={targetId}
+          onValueChange={setTargetId}
+          options={[
+            ...(includeRoot ? [{ value: "", label: "Root level" }] : []),
+            ...collections
+              .filter((c) => !excludedIds.includes(c.id))
+              .map((c) => ({ value: c.id, label: c.title })),
+          ]}
+        />
       </FieldWrapper>
     </Modal>
   );

@@ -9,6 +9,7 @@ import { DashboardModals, ModalState } from "@/components/dashboard/dashboard-mo
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { PostCard } from "@/components/posts/post-card";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { SelectionState } from "@/types";
 
@@ -16,10 +17,23 @@ const emptySelection: SelectionState = { collectionIds: [], postIds: [] };
 
 export function DashboardShell() {
   const { user, loading, isConfigured, signOut } = useAuth();
+  const { showError } = useToast();
   const { collections, posts, tree } = useWorkspace(user?.uid);
   const [currentCollectionId, setCurrentCollectionId] = useState<string | null>(null);
   const [selection, setSelection] = useState<SelectionState>(emptySelection);
   const [modal, setModal] = useState<ModalState | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await signOut();
+    } catch (err) {
+      showError(err instanceof Error ? err.message : "Sign-out failed.");
+    } finally {
+      setSigningOut(false);
+    }
+  };
 
   const currentCollection = collections.find((c) => c.id === currentCollectionId) ?? null;
   const visibleCollections = useMemo(
@@ -44,7 +58,7 @@ export function DashboardShell() {
   if (loading) {
     return (
       <div className="dashboard-loading">
-        <span style={{ fontSize: "1.5rem" }}>⊞</span>
+        <div className="spinner" style={{ width: 20, height: 20 }} />
         Loading workspace…
       </div>
     );
@@ -122,8 +136,8 @@ export function DashboardShell() {
               Bulk add
             </Button>
             <ThemeToggle />
-            <Button variant="ghost" onClick={() => void signOut()} style={{ fontSize: "0.85rem" }}>
-              Sign out
+            <Button variant="ghost" onClick={() => void handleSignOut()} disabled={signingOut} style={{ fontSize: "0.85rem" }}>
+              {signingOut ? "Signing out…" : "Sign out"}
             </Button>
           </div>
         </div>

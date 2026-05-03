@@ -80,6 +80,26 @@ export async function updatePost(postId: string, values: PostFormValues) {
   );
 }
 
+export async function bulkCreateLinks(ownerId: string, collectionId: string | null, rawText: string) {
+  const links = rawText.split("\n").map((l) => l.trim()).filter(Boolean);
+  const db = getFirebaseDb();
+  const batch = writeBatch(db);
+  links.forEach((link) => {
+    const ref = doc(collection(db, POSTS));
+    batch.set(ref, {
+      ownerId,
+      collectionId,
+      title: "",
+      description: "",
+      link,
+      platform: getPlatformFromLink(link),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  });
+  return batch.commit();
+}
+
 export async function bulkCreatePosts(ownerId: string, collectionId: string | null, rawText: string) {
   const lines = rawText.split("\n").map((line) => line.trim()).filter(Boolean);
   const db = getFirebaseDb();
