@@ -8,10 +8,12 @@ import { CollectionTree } from "@/components/collections/collection-tree";
 import { DashboardModals, ModalState } from "@/components/dashboard/dashboard-modals";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { PostCard } from "@/components/posts/post-card";
+import { PostEmbedModal } from "@/components/posts/post-embed-modal";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { SelectionState } from "@/types";
+import { cn } from "@/lib/utils";
 
 const emptySelection: SelectionState = { collectionIds: [], postIds: [] };
 
@@ -23,6 +25,8 @@ export function DashboardShell() {
   const [selection, setSelection] = useState<SelectionState>(emptySelection);
   const [modal, setModal] = useState<ModalState | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [postView, setPostView] = useState<"grid" | "feed">("grid");
+  const [previewPost, setPreviewPost] = useState<import("@/types").PostItem | null>(null);
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -238,17 +242,31 @@ export function DashboardShell() {
             <div className="section-header">
               <h2>Posts</h2>
               <span className="section-header__count">{visiblePosts.length}</span>
+              <div className="view-toggle">
+                <button
+                  className={cn("view-toggle__btn", postView === "grid" && "view-toggle__btn--active")}
+                  onClick={() => setPostView("grid")}
+                  title="Grid view"
+                >⊞</button>
+                <button
+                  className={cn("view-toggle__btn", postView === "feed" && "view-toggle__btn--active")}
+                  onClick={() => setPostView("feed")}
+                  title="Feed view"
+                >☰</button>
+              </div>
             </div>
             {visiblePosts.length > 0 ? (
-              <div className="post-grid">
+              <div className={postView === "feed" ? "post-feed" : "post-grid"}>
                 {visiblePosts.map((post) => (
                   <PostCard
                     key={post.id}
                     post={post}
+                    view={postView}
                     checked={selection.postIds.includes(post.id)}
                     onToggleSelect={(id) => toggleSelected("postIds", id)}
                     onEdit={(item) => setModal({ type: "editPost", post: item })}
                     onDelete={(item) => setModal({ type: "deletePosts", postIds: [item.id] })}
+                    onPreview={setPreviewPost}
                   />
                 ))}
               </div>
@@ -264,6 +282,8 @@ export function DashboardShell() {
           </div>
         </div>
       </main>
+
+      {previewPost && <PostEmbedModal post={previewPost} onClose={() => setPreviewPost(null)} />}
 
       <DashboardModals
         modal={modal}

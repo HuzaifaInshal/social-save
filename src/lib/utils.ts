@@ -4,6 +4,41 @@ export function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ");
 }
 
+export function getEmbedUrl(link: string, platform: PostPlatform): string | null {
+  try {
+    const url = new URL(link);
+    if (platform === "youtube") {
+      let videoId: string | null = null;
+      if (url.hostname.includes("youtu.be")) {
+        videoId = url.pathname.slice(1);
+      } else {
+        videoId = url.searchParams.get("v");
+        if (!videoId) {
+          // shorts: /shorts/<id>
+          const m = url.pathname.match(/\/shorts\/([^/?]+)/);
+          if (m) videoId = m[1];
+        }
+      }
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+    if (platform === "facebook") {
+      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(link)}&show_text=false&width=500`;
+    }
+    if (platform === "tiktok") {
+      const m = url.pathname.match(/\/video\/([\d]+)/);
+      return m ? `https://www.tiktok.com/embed/v2/${m[1]}` : null;
+    }
+    if (platform === "instagram") {
+      // normalize trailing slash
+      const path = url.pathname.replace(/\/$/, "");
+      return `https://www.instagram.com${path}/embed/`;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 export function getPlatformFromLink(link: string): PostPlatform {
   try {
     const host = new URL(link).hostname.replace("www.", "");
