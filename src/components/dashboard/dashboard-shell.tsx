@@ -16,7 +16,7 @@ import { SelectionState } from "@/types";
 
 const emptySelection: SelectionState = { collectionIds: [], postIds: [] };
 type DashboardTab = "info" | "collections" | "posts";
-type ViewMode = "grid" | "list";
+type ViewMode = "grid" | "single";
 
 export function DashboardShell() {
   const { user, loading, isConfigured, signOut } = useAuth();
@@ -28,6 +28,7 @@ export function DashboardShell() {
   const [signingOut, setSigningOut] = useState(false);
   const [activeTab, setActiveTab] = useState<DashboardTab>("info");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [activePostIndex, setActivePostIndex] = useState(0);
   const [query, setQuery] = useState("");
 
   const handleSignOut = async () => {
@@ -247,12 +248,15 @@ export function DashboardShell() {
                 ▦
               </button>
               <button
-                className={cn("view-button", viewMode === "list" && "view-button--active")}
+                className={cn("view-button", viewMode === "single" && "view-button--active")}
                 type="button"
-                aria-label="List view"
-                onClick={() => setViewMode("list")}
+                aria-label="Single view"
+                onClick={() => {
+                  setViewMode("single");
+                  setActivePostIndex(0);
+                }}
               >
-                ☷
+                ▢
               </button>
             </div>
           </div>
@@ -336,37 +340,78 @@ export function DashboardShell() {
 
           {/* Posts section */}
           {activeTab === "posts" && <div className="dashboard-section">
-            <div className="posts-header-row">
-              <div className="section-header section-header--posts">
-                <h2>Posts <span>({filteredPosts.length})</span></h2>
-              </div>
-              <div className="posts-tools">
-                <Button variant="secondary" onClick={() => setModal({ type: "bulkUpload" })}>
-                  Bulk add
-                </Button>
-                <Button onClick={() => setModal({ type: "createPost", collectionId: currentCollectionId })}>
-                  + Add post
-                </Button>
-                <div className="post-filter">
-                  <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m21 21-4.35-4.35m2.35-5.15a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" /></svg></span>
-                  <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter posts..." aria-label="Filter posts" />
-                  <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" /></svg></span>
+            {viewMode !== "single" && (
+              <div className="posts-header-row">
+                <div className="section-header section-header--posts">
+                  <h2>Posts <span>({filteredPosts.length})</span></h2>
+                </div>
+                <div className="posts-tools">
+                  <Button variant="secondary" onClick={() => setModal({ type: "bulkUpload" })}>
+                    Bulk add
+                  </Button>
+                  <Button onClick={() => setModal({ type: "createPost", collectionId: currentCollectionId })}>
+                    + Add post
+                  </Button>
+                  <div className="post-filter">
+                    <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m21 21-4.35-4.35m2.35-5.15a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" /></svg></span>
+                    <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter posts..." aria-label="Filter posts" />
+                    <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" /></svg></span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
             {filteredPosts.length > 0 ? (
-              <div className={viewMode === "grid" ? "post-grid" : "post-list"}>
-                {filteredPosts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    checked={selection.postIds.includes(post.id)}
-                    onToggleSelect={(id) => toggleSelected("postIds", id)}
-                    onEdit={(item) => setModal({ type: "editPost", post: item })}
-                    onDelete={(item) => setModal({ type: "deletePosts", postIds: [item.id] })}
-                  />
-                ))}
-              </div>
+              viewMode === "grid" ? (
+                <div className="post-grid">
+                  {filteredPosts.map((post) => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      checked={selection.postIds.includes(post.id)}
+                      onToggleSelect={(id) => toggleSelected("postIds", id)}
+                      onEdit={(item) => setModal({ type: "editPost", post: item })}
+                      onDelete={(item) => setModal({ type: "deletePosts", postIds: [item.id] })}
+                    />
+                  ))}
+                </div>
+              ) : (() => {
+                const safeIndex = Math.min(activePostIndex, filteredPosts.length - 1);
+                const post = filteredPosts[safeIndex];
+                return (
+                  <div className="post-single-view">
+                    <div className="post-single-frame">
+                      <iframe
+                        src={post.link}
+                        title={post.title}
+                        className="post-iframe"
+                      />
+                    </div>
+                    <div className="post-single-nav">
+                      <button
+                        className="nav-btn"
+                        disabled={safeIndex === 0}
+                        onClick={() => setActivePostIndex(safeIndex - 1)}
+                        aria-label="Previous post"
+                      >
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="m18 15-6-6-6 6" />
+                        </svg>
+                      </button>
+                      <button
+                        className="nav-btn"
+                        disabled={safeIndex === filteredPosts.length - 1}
+                        onClick={() => setActivePostIndex(safeIndex + 1)}
+                        aria-label="Next post"
+                      >
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="m6 9 6 6 6-6" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()
             ) : (
               <div className="empty-state">
                 <span className="empty-state__icon">🔗</span>

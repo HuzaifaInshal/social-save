@@ -286,55 +286,6 @@
   text-overflow: ellipsis;
 }
 
-/* List view adjustments */
-.post-list .post-card {
-  min-height: auto;
-  flex-direction: row;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  gap: 1.25rem;
-}
-
-.post-list .post-card__banner {
-  width: 120px;
-  height: 80px;
-  flex-shrink: 0;
-  border-radius: 6px;
-}
-
-.post-list .post-card__banner-icon {
-  display: grid;
-  font-size: 1.5rem;
-}
-
-.post-list .post-card__body {
-  padding: 0;
-  gap: 0.25rem;
-}
-
-.post-list .post-card__title {
-  display: block;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #f6f7ff;
-}
-
-.post-list .post-card__desc {
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  font-size: 0.86rem;
-  color: rgba(225, 231, 250, 0.62);
-}
-
-.post-list .post-card__footer {
-  padding: 0;
-  border-top: 0;
-  margin-left: auto;
-  gap: 1.5rem;
-}
-
 :root[data-theme="light"] .collection-card,
 :root[data-theme="light"] .post-card {
   background: rgba(255, 255, 255, 0.78);
@@ -368,14 +319,6 @@
 }
 
 :root[data-theme="light"] .post-card__host {
-  color: rgba(31, 41, 68, 0.58);
-}
-
-:root[data-theme="light"] .post-list .post-card__title {
-  color: #111827;
-}
-
-:root[data-theme="light"] .post-list .post-card__desc {
   color: rgba(31, 41, 68, 0.58);
 }
 
