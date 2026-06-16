@@ -380,12 +380,35 @@ export function DashboardShell() {
                 const post = filteredPosts[safeIndex];
                 return (
                   <div className="post-single-view">
-                    <div className="post-single-frame">
-                      <iframe
-                        src={post.link}
-                        title={post.title}
-                        className="post-iframe"
-                      />
+                    <div className="post-single-main">
+                      <div className="post-single-header">
+                        <div className="post-single-header__meta">
+                          <h3 className="post-single-title">{post.title}</h3>
+                          {post.description && <p className="post-single-desc">{post.description}</p>}
+                          <a href={post.link} target="_blank" rel="noreferrer" className="post-single-link">
+                            {post.link.length > 60 ? `${post.link.substring(0, 60)}...` : post.link}
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: "6px" }}>
+                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                              <polyline points="15 3 21 3 21 9" />
+                              <line x1="10" y1="14" x2="21" y2="3" />
+                            </svg>
+                          </a>
+                        </div>
+                        <div className="post-single-header__actions">
+                           <Button variant="secondary" onClick={() => setModal({ type: "editPost", post })}>Edit</Button>
+                        </div>
+                      </div>
+                      <div className="post-single-frame">
+                        <iframe
+                          src={post.link}
+                          title={post.title}
+                          className="post-iframe"
+                        />
+                        <div className="iframe-overlay-hint">
+                          <p>If the content below does not load, the platform may be blocking embedded views.</p>
+                          <a href={post.link} target="_blank" rel="noreferrer" className="post-single-link">Open original post</a>
+                        </div>
+                      </div>
                     </div>
                     <div className="post-single-nav">
                       <button
