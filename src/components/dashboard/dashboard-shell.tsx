@@ -11,10 +11,12 @@ import { PostCard } from "@/components/posts/post-card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { cn } from "@/lib/utils";
 import { SelectionState } from "@/types";
 
 const emptySelection: SelectionState = { collectionIds: [], postIds: [] };
 type DashboardTab = "info" | "collections" | "posts";
+type ViewMode = "grid" | "list";
 
 export function DashboardShell() {
   const { user, loading, isConfigured, signOut } = useAuth();
@@ -25,6 +27,7 @@ export function DashboardShell() {
   const [modal, setModal] = useState<ModalState | null>(null);
   const [signingOut, setSigningOut] = useState(false);
   const [activeTab, setActiveTab] = useState<DashboardTab>("info");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [query, setQuery] = useState("");
 
   const handleSignOut = async () => {
@@ -235,8 +238,22 @@ export function DashboardShell() {
             </div>
             <div className="dashboard-view-actions">
               <button className="sort-button" type="button">Sort by <strong>Newest</strong><span aria-hidden="true">⌄</span></button>
-              <button className="view-button view-button--active" type="button" aria-label="Grid view">▦</button>
-              <button className="view-button" type="button" aria-label="List view">☷</button>
+              <button
+                className={cn("view-button", viewMode === "grid" && "view-button--active")}
+                type="button"
+                aria-label="Grid view"
+                onClick={() => setViewMode("grid")}
+              >
+                ▦
+              </button>
+              <button
+                className={cn("view-button", viewMode === "list" && "view-button--active")}
+                type="button"
+                aria-label="List view"
+                onClick={() => setViewMode("list")}
+              >
+                ☷
+              </button>
             </div>
           </div>
 
@@ -338,7 +355,7 @@ export function DashboardShell() {
               </div>
             </div>
             {filteredPosts.length > 0 ? (
-              <div className="post-grid">
+              <div className={viewMode === "grid" ? "post-grid" : "post-list"}>
                 {filteredPosts.map((post) => (
                   <PostCard
                     key={post.id}

@@ -621,6 +621,12 @@
   gap: 1.25rem;
 }
 
+.post-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .empty-state {
   min-height: 196px;
   display: flex;

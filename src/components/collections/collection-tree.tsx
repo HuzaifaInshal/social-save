@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { CollectionNode } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,9 @@ export function CollectionTree({ nodes, activeId, selectedIds, onOpen, onToggleS
 type NodeProps = Omit<CollectionTreeProps, "nodes"> & { node: CollectionNode; depth: number };
 
 function TreeNode({ node, depth, activeId, selectedIds, onOpen, onToggleSelect }: NodeProps) {
+  const [expanded, setExpanded] = useState(false);
+  const hasChildren = node.children.length > 0;
+
   return (
     <div>
       <div
@@ -54,6 +58,15 @@ function TreeNode({ node, depth, activeId, selectedIds, onOpen, onToggleSelect }
           />
           <span className="selector__box" />
         </label>
+        {hasChildren && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
+            style={{ background: "none", border: "none", color: "inherit", cursor: "pointer", padding: "0 2px", fontSize: "0.7rem", flexShrink: 0, opacity: 0.7 }}
+            aria-label={expanded ? "Collapse" : "Expand"}
+          >
+            {expanded ? "▾" : "▸"}
+          </button>
+        )}
         <button
           style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.4rem", background: "none", border: "none", color: "inherit", cursor: "pointer", fontSize: "inherit", padding: 0, minWidth: 0 }}
           onClick={() => onOpen(node.id)}
@@ -62,7 +75,7 @@ function TreeNode({ node, depth, activeId, selectedIds, onOpen, onToggleSelect }
           <span className="tree__item-count">{node.postCount}</span>
         </button>
       </div>
-      {node.children.map((child) => (
+      {expanded && hasChildren && node.children.map((child) => (
         <TreeNode
           key={child.id}
           node={child}

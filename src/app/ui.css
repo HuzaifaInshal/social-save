@@ -201,6 +201,28 @@
   box-shadow: var(--shadow);
   overflow: hidden;
   z-index: 200;
+  max-height: 220px;
+}
+
+.field__select-content [data-radix-select-viewport] {
+  overflow-y: auto;
+  max-height: 220px;
+}
+
+.field__select-viewport {
+  overflow-y: auto;
+  max-height: 180px;
+}
+
+.field__select-scroll-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 0.65rem;
+  cursor: default;
 }
 
 .field__select-item {

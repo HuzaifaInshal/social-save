@@ -52,13 +52,15 @@ export function SelectInput({ value, onValueChange, options, placeholder }: Sele
       </Select.Trigger>
       <Select.Portal>
         <Select.Content className="field__select-content" position="popper" sideOffset={4}>
-          <Select.Viewport>
+          <Select.ScrollUpButton className="field__select-scroll-btn">▲</Select.ScrollUpButton>
+          <Select.Viewport className="field__select-viewport">
             {options.map((opt) => (
               <Select.Item key={opt.value} value={toInternal(opt.value)} className="field__select-item">
                 <Select.ItemText>{opt.label}</Select.ItemText>
               </Select.Item>
             ))}
           </Select.Viewport>
+          <Select.ScrollDownButton className="field__select-scroll-btn">▼</Select.ScrollDownButton>
         </Select.Content>
       </Select.Portal>
     </Select.Root>
