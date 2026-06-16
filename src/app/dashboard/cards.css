@@ -1,14 +1,52 @@
-/* Collection Card */
+/* ==========================================================================
+   Shared Action Buttons
+   ========================================================================== */
+
+.card-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-3);
+  font-size: 0.82rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.card-action-btn:hover {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.card-action-btn--danger:hover {
+  background: rgba(248, 113, 113, 0.12);
+  color: var(--red);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+/* ==========================================================================
+   Collection Card
+   ========================================================================== */
+
 .collection-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: 12px;
   padding: 1.1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  transition: border-color 0.15s, box-shadow 0.15s;
-  cursor: pointer;
+  gap: 0.7rem;
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+  cursor: default;
 }
 
 .collection-card:hover {
@@ -21,6 +59,12 @@
   background: var(--accent-glow);
 }
 
+.collection-card--selected:hover {
+  border-color: var(--accent);
+}
+
+/* ---- Top row: icon + checkbox ---- */
+
 .collection-card__top {
   display: flex;
   align-items: center;
@@ -28,15 +72,17 @@
 }
 
 .collection-card__icon {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 10px;
   background: var(--accent-glow);
   border: 1px solid var(--accent-glow-strong);
   display: grid;
   place-items: center;
-  font-size: 1rem;
+  font-size: 1.05rem;
 }
+
+/* ---- Title ---- */
 
 .collection-card__title {
   font-size: 0.95rem;
@@ -49,192 +95,213 @@
   text-align: left;
   cursor: pointer;
   line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .collection-card__title:hover {
   color: var(--accent-2);
 }
 
+/* ---- Description ---- */
+
 .collection-card__desc {
   font-size: 0.82rem;
   color: var(--text-3);
   line-height: 1.5;
   flex: 1;
-}
-
-.collection-card__footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--border);
-}
-
-.collection-card__meta {
-  font-size: 0.78rem;
-  color: var(--text-3);
-}
-
-.collection-card__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.collection-card:hover .collection-card__actions {
-  opacity: 1;
-}
-
-.card-action-btn {
-  padding: 0.3rem 0.55rem;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  color: var(--text-3);
-  font-size: 0.78rem;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.card-action-btn:hover {
-  background: var(--surface-2);
-  color: var(--text);
-}
-
-.card-action-btn--danger:hover {
-  background: rgba(248, 113, 113, 0.1);
-  color: var(--red);
-}
-
-/* Post Card */
-.post-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.post-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-sm);
-}
-
-.post-card--selected {
-  border-color: var(--accent);
-}
-
-.post-card__banner {
-  height: 110px;
-  display: grid;
-  place-items: center;
-  position: relative;
-}
-
-.post-card__banner[data-platform="instagram"] {
-  background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
-}
-
-.post-card__banner[data-platform="youtube"] {
-  background: linear-gradient(135deg, #1a0000, #ff0000);
-}
-
-.post-card__banner[data-platform="facebook"] {
-  background: linear-gradient(135deg, #0a1628, #1877f2);
-}
-
-.post-card__banner[data-platform="tiktok"] {
-  background: linear-gradient(135deg, #010101, #69c9d0);
-}
-
-.post-card__banner[data-platform="other"] {
-  background: linear-gradient(135deg, var(--surface-2), var(--surface-3));
-}
-
-.post-card__banner-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(8px);
-  display: grid;
-  place-items: center;
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: white;
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
-}
-
-.post-card__select {
-  position: absolute;
-  top: 0.6rem;
-  left: 0.6rem;
-}
-
-.post-card__body {
-  padding: 0.9rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex: 1;
-}
-
-.post-card__platform-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 500;
-  background: var(--surface-2);
-  color: var(--text-3);
-  border: 1px solid var(--border);
-  width: fit-content;
-}
-
-.post-card__title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.35;
-  letter-spacing: -0.01em;
-}
-
-.post-card__desc {
-  font-size: 0.8rem;
-  color: var(--text-3);
-  line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.post-card__footer {
+/* ---- Footer ---- */
+
+.collection-card__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.65rem 0.9rem;
+  padding-top: 0.6rem;
   border-top: 1px solid var(--border);
 }
 
-.post-card__host {
+.collection-card__meta {
   font-size: 0.75rem;
+  color: var(--text-3);
+  letter-spacing: 0.02em;
+}
+
+.collection-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+
+.collection-card:hover .collection-card__actions {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   Post Card
+   ========================================================================== */
+
+.post-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+.post-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+}
+
+.post-card--selected {
+  border-color: var(--accent);
+}
+
+.post-card--selected:hover {
+  border-color: var(--accent);
+}
+
+/* ---- Banner / Image area ---- */
+
+.post-card__banner {
+  height: 200px;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.post-card__banner[data-platform="instagram"] {
+  background: linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%);
+}
+
+.post-card__banner[data-platform="youtube"] {
+  background: linear-gradient(135deg, #1a0000 0%, #cc0000 60%, #ff0000 100%);
+}
+
+.post-card__banner[data-platform="facebook"] {
+  background: linear-gradient(135deg, #0a1628 0%, #1877f2 100%);
+}
+
+.post-card__banner[data-platform="tiktok"] {
+  background: linear-gradient(135deg, #010101 0%, #25f4ee 50%, #fe2c55 100%);
+}
+
+.post-card__banner[data-platform="other"] {
+  background: linear-gradient(135deg, var(--surface-2), var(--surface-3));
+}
+
+/* ---- Banner icon (centred, frosted) ---- */
+
+.post-card__banner-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: grid;
+  place-items: center;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+}
+
+/* ---- Checkbox overlay ---- */
+
+.post-card__select {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.65rem;
+}
+
+/* ---- Body ---- */
+
+.post-card__body {
+  padding: 0.85rem 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+/* Platform row: icon dot + name */
+
+.post-card__platform-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.post-card__platform-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+  color: white;
+  background: var(--accent);
+}
+
+.post-card__platform-dot[data-platform="instagram"] {
+  background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+}
+
+.post-card__platform-dot[data-platform="youtube"] {
+  background: #ff0000;
+}
+
+.post-card__platform-dot[data-platform="facebook"] {
+  background: #1877f2;
+}
+
+.post-card__platform-dot[data-platform="tiktok"] {
+  background: linear-gradient(135deg, #25f4ee, #fe2c55);
+}
+
+.post-card__platform-dot[data-platform="other"] {
+  background: var(--surface-3);
+  color: var(--text-3);
+  border: 1px solid var(--border);
+}
+
+.post-card__platform-name {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* Host text */
+
+.post-card__host {
+  font-size: 0.74rem;
   color: var(--text-3);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.post-card__actions {
+/* ---- Footer / Actions row ---- */
+
+.post-card__footer {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  flex-shrink: 0;
+  gap: 0.4rem;
+  padding: 0.6rem 0.95rem;
+  border-top: 1px solid var(--border);
 }

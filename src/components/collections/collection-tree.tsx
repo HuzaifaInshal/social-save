@@ -3,6 +3,12 @@
 import { CollectionNode } from "@/types";
 import { cn } from "@/lib/utils";
 
+/** Rotating colors for collection dot indicators */
+const DOT_COLORS = [
+  "#7c5cfc", "#e879a8", "#f59e42", "#34d399", "#60a5fa",
+  "#c084fc", "#fb7185", "#fbbf24", "#22d3ee", "#a78bfa",
+];
+
 type CollectionTreeProps = {
   nodes: CollectionNode[];
   activeId: string | null;
@@ -18,14 +24,20 @@ export function CollectionTree({ nodes, activeId, selectedIds, onOpen, onToggleS
         className={cn("sidebar__all-btn", activeId === null && "sidebar__all-btn--active")}
         onClick={() => onOpen(null)}
       >
-        <span style={{ fontSize: "0.85rem" }}>⊞</span>
-        All collections
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+          <rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+          <rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+          <rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+          <rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+        </svg>
+        All Collections
       </button>
-      {nodes.map((node) => (
+      {nodes.map((node, index) => (
         <TreeNode
           key={node.id}
           node={node}
           depth={0}
+          index={index}
           activeId={activeId}
           selectedIds={selectedIds}
           onOpen={onOpen}
@@ -36,37 +48,28 @@ export function CollectionTree({ nodes, activeId, selectedIds, onOpen, onToggleS
   );
 }
 
-type NodeProps = Omit<CollectionTreeProps, "nodes"> & { node: CollectionNode; depth: number };
+type NodeProps = Omit<CollectionTreeProps, "nodes"> & { node: CollectionNode; depth: number; index: number };
 
-function TreeNode({ node, depth, activeId, selectedIds, onOpen, onToggleSelect }: NodeProps) {
+function TreeNode({ node, depth, index, activeId, selectedIds, onOpen, onToggleSelect }: NodeProps) {
+  const dotColor = DOT_COLORS[index % DOT_COLORS.length];
+
   return (
     <div>
-      <div
+      <button
         className={cn("tree__item", activeId === node.id && "tree__item--active")}
         style={{ paddingLeft: `${depth * 14 + 12}px` }}
+        onClick={() => onOpen(node.id)}
       >
-        <label className="selector tree__item-checkbox" onClick={(e) => e.stopPropagation()}>
-          <input
-            type="checkbox"
-            checked={selectedIds.includes(node.id)}
-            onChange={() => onToggleSelect(node.id)}
-            aria-label={`Select ${node.title}`}
-          />
-          <span className="selector__box" />
-        </label>
-        <button
-          style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.4rem", background: "none", border: "none", color: "inherit", cursor: "pointer", fontSize: "inherit", padding: 0, minWidth: 0 }}
-          onClick={() => onOpen(node.id)}
-        >
-          <span className="tree__item-name">{node.title}</span>
-          <span className="tree__item-count">{node.postCount}</span>
-        </button>
-      </div>
-      {node.children.map((child) => (
+        <span className="tree__item-dot" style={{ background: dotColor }} />
+        <span className="tree__item-name">{node.title}</span>
+        <span className="tree__item-count">{node.postCount}</span>
+      </button>
+      {node.children.map((child, childIndex) => (
         <TreeNode
           key={child.id}
           node={child}
           depth={depth + 1}
+          index={index + childIndex + 1}
           activeId={activeId}
           selectedIds={selectedIds}
           onOpen={onOpen}
