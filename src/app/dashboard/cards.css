@@ -285,3 +285,71 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+:root[data-theme="light"] .collection-card,
+:root[data-theme="light"] .post-card {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(92, 112, 150, 0.16);
+  box-shadow: 0 18px 40px rgba(50, 65, 105, 0.07);
+}
+
+:root[data-theme="light"] .collection-card:hover,
+:root[data-theme="light"] .post-card:hover {
+  background: #fff;
+  border-color: rgba(124, 92, 255, 0.28);
+}
+
+:root[data-theme="light"] .collection-card--selected,
+:root[data-theme="light"] .post-card--selected {
+  border-color: rgba(124, 92, 255, 0.56);
+  background: rgba(124, 92, 255, 0.08);
+}
+
+:root[data-theme="light"] .collection-card__icon {
+  background: rgba(124, 92, 255, 0.1);
+  border-color: rgba(124, 92, 255, 0.22);
+}
+
+:root[data-theme="light"] .collection-card__title {
+  color: #111827;
+}
+
+:root[data-theme="light"] .collection-card__title:hover {
+  color: #6d42e8;
+}
+
+:root[data-theme="light"] .collection-card__desc,
+:root[data-theme="light"] .collection-card__meta,
+:root[data-theme="light"] .post-card__host {
+  color: rgba(31, 41, 68, 0.58);
+}
+
+:root[data-theme="light"] .collection-card__footer {
+  border-top-color: rgba(92, 112, 150, 0.14);
+}
+
+:root[data-theme="light"] .card-action-btn {
+  border-color: rgba(92, 112, 150, 0.16);
+  background: rgba(247, 249, 255, 0.86);
+  color: rgba(31, 41, 68, 0.72);
+}
+
+:root[data-theme="light"] .card-action-btn:hover {
+  background: #fff;
+  border-color: rgba(124, 92, 255, 0.28);
+  color: #111827;
+}
+
+:root[data-theme="light"] .card-action-btn--danger {
+  color: #dc2626;
+}
+
+:root[data-theme="light"] .card-action-btn--danger:hover {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.22);
+  color: #b91c1c;
+}
+
+:root[data-theme="light"] .post-card__platform-badge {
+  color: #111827;
+}

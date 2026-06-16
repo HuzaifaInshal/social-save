@@ -261,6 +261,11 @@
   transform: rotate(-45deg) translateY(-1px);
 }
 
+:root[data-theme="light"] .selector__box {
+  border-color: rgba(31, 41, 68, 0.38);
+  background: rgba(255, 255, 255, 0.72);
+}
+
 /* Modal */
 .modal-backdrop {
   position: fixed;
