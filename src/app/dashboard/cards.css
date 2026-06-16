@@ -1,24 +1,25 @@
-/* Collection Card */
 .collection-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 1.1rem;
+  min-height: 180px;
+  background: rgba(16, 25, 45, 0.74);
+  border: 1px solid rgba(137, 155, 203, 0.16);
+  border-radius: 8px;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  gap: 0.72rem;
+  transition: border-color 0.15s, transform 0.15s, background 0.15s;
   cursor: pointer;
 }
 
 .collection-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-sm);
+  border-color: rgba(154, 121, 242, 0.45);
+  background: rgba(22, 33, 58, 0.8);
+  transform: translateY(-1px);
 }
 
 .collection-card--selected {
-  border-color: var(--accent);
-  background: var(--accent-glow);
+  border-color: rgba(150, 102, 242, 0.8);
+  background: rgba(91, 73, 198, 0.22);
 }
 
 .collection-card__top {
@@ -28,21 +29,21 @@
 }
 
 .collection-card__icon {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 10px;
-  background: var(--accent-glow);
-  border: 1px solid var(--accent-glow-strong);
+  background: rgba(121, 87, 230, 0.2);
+  border: 1px solid rgba(143, 103, 235, 0.5);
   display: grid;
   place-items: center;
-  font-size: 1rem;
+  font-size: 1.05rem;
 }
 
 .collection-card__title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -0.01em;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f6f7ff;
+  letter-spacing: 0;
   border: none;
   background: transparent;
   padding: 0;
@@ -52,12 +53,12 @@
 }
 
 .collection-card__title:hover {
-  color: var(--accent-2);
+  color: #b891ff;
 }
 
 .collection-card__desc {
-  font-size: 0.82rem;
-  color: var(--text-3);
+  font-size: 0.86rem;
+  color: rgba(225, 231, 250, 0.62);
   line-height: 1.5;
   flex: 1;
 }
@@ -67,19 +68,23 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--border);
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(137, 155, 203, 0.12);
 }
 
 .collection-card__meta {
-  font-size: 0.78rem;
-  color: var(--text-3);
+  font-size: 0.8rem;
+  color: rgba(225, 231, 250, 0.58);
+}
+
+.collection-card__actions,
+.post-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 .collection-card__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
   opacity: 0;
   transition: opacity 0.15s;
 }
@@ -89,95 +94,123 @@
 }
 
 .card-action-btn {
-  padding: 0.3rem 0.55rem;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  color: var(--text-3);
-  font-size: 0.78rem;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(137, 155, 203, 0.14);
+  background: rgba(24, 34, 58, 0.85);
+  color: rgba(236, 240, 255, 0.82);
+  font-size: 0;
   cursor: pointer;
-  transition: all 0.15s;
+  display: inline-grid;
+  place-items: center;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .card-action-btn:hover {
-  background: var(--surface-2);
-  color: var(--text);
+  background: rgba(40, 52, 82, 0.92);
+  border-color: rgba(151, 168, 213, 0.32);
+  color: #fff;
+}
+
+.card-action-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.card-action-btn--danger {
+  color: #ff6677;
 }
 
 .card-action-btn--danger:hover {
-  background: rgba(248, 113, 113, 0.1);
-  color: var(--red);
+  background: rgba(248, 75, 98, 0.12);
+  border-color: rgba(248, 75, 98, 0.32);
+  color: #ff7d8b;
 }
 
-/* Post Card */
 .post-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  min-height: 255px;
+  background: rgba(16, 25, 45, 0.76);
+  border: 1px solid rgba(137, 155, 203, 0.18);
+  border-radius: 8px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s, transform 0.15s, background 0.15s;
 }
 
 .post-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-sm);
+  border-color: rgba(154, 121, 242, 0.45);
+  background: rgba(20, 30, 52, 0.84);
+  transform: translateY(-1px);
 }
 
 .post-card--selected {
-  border-color: var(--accent);
+  border-color: rgba(150, 102, 242, 0.8);
 }
 
 .post-card__banner {
-  height: 110px;
+  height: 150px;
   display: grid;
   place-items: center;
   position: relative;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
 }
 
-.post-card__banner[data-platform="instagram"] {
-  background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+.post-card__banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(5, 9, 20, 0.03), rgba(5, 9, 20, 0.18)),
+    var(--post-scene);
 }
 
-.post-card__banner[data-platform="youtube"] {
-  background: linear-gradient(135deg, #1a0000, #ff0000);
+.post-card:nth-child(4n + 1) .post-card__banner {
+  --post-scene:
+    radial-gradient(circle at 24% 18%, rgba(132, 204, 255, 0.8), transparent 4rem),
+    linear-gradient(160deg, #071633 0 36%, #14466c 37% 54%, #0b1328 55% 100%);
 }
 
-.post-card__banner[data-platform="facebook"] {
-  background: linear-gradient(135deg, #0a1628, #1877f2);
+.post-card:nth-child(4n + 2) .post-card__banner {
+  --post-scene:
+    radial-gradient(circle at 70% 35%, rgba(255, 190, 130, 0.58), transparent 8rem),
+    linear-gradient(160deg, #26203d 0 42%, #a06c67 43% 56%, #10182a 57% 100%);
 }
 
-.post-card__banner[data-platform="tiktok"] {
-  background: linear-gradient(135deg, #010101, #69c9d0);
+.post-card:nth-child(4n + 3) .post-card__banner {
+  --post-scene:
+    radial-gradient(circle at 58% 70%, rgba(255, 109, 93, 0.8), transparent 6rem),
+    linear-gradient(145deg, #12112a 0 36%, #40295a 37% 58%, #0b172a 59% 100%);
 }
 
-.post-card__banner[data-platform="other"] {
-  background: linear-gradient(135deg, var(--surface-2), var(--surface-3));
+.post-card:nth-child(4n) .post-card__banner {
+  --post-scene:
+    radial-gradient(circle at 78% 36%, rgba(231, 129, 204, 0.72), transparent 9rem),
+    linear-gradient(160deg, #2b214b 0 38%, #a26292 39% 56%, #11172d 57% 100%);
 }
 
 .post-card__banner-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(8px);
-  display: grid;
-  place-items: center;
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: white;
-  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  display: none;
 }
 
 .post-card__select {
   position: absolute;
-  top: 0.6rem;
-  left: 0.6rem;
+  z-index: 2;
+  top: 0.78rem;
+  left: 0.78rem;
 }
 
 .post-card__body {
-  padding: 0.9rem;
+  padding: 0.95rem 1rem 0.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -187,54 +220,68 @@
 .post-card__platform-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
+  gap: 0.48rem;
+  font-size: 0.9rem;
   font-weight: 500;
-  background: var(--surface-2);
-  color: var(--text-3);
-  border: 1px solid var(--border);
+  color: rgba(243, 246, 255, 0.92);
   width: fit-content;
 }
 
-.post-card__title {
+.post-card__platform-badge::before {
+  content: "f";
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  background: #2f78ef;
+  color: #fff;
   font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.35;
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  font-family: Arial, sans-serif;
+}
+
+.post-card__banner[data-platform="instagram"] + .post-card__body .post-card__platform-badge::before {
+  content: "◎";
+  background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af);
+}
+
+.post-card__banner[data-platform="youtube"] + .post-card__body .post-card__platform-badge::before {
+  content: "▶";
+  background: #ff2637;
+  font-size: 0.68rem;
+}
+
+.post-card__banner[data-platform="tiktok"] + .post-card__body .post-card__platform-badge::before {
+  content: "♪";
+  background: #111827;
+}
+
+.post-card__banner[data-platform="other"] + .post-card__body .post-card__platform-badge::before {
+  content: "↗";
+  background: #64748b;
+}
+
+.post-card__title {
+  display: none;
 }
 
 .post-card__desc {
-  font-size: 0.8rem;
-  color: var(--text-3);
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  display: none;
 }
 
 .post-card__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.65rem 0.9rem;
-  border-top: 1px solid var(--border);
+  gap: 0.75rem;
+  padding: 0.15rem 1rem 0.95rem;
 }
 
 .post-card__host {
-  font-size: 0.75rem;
-  color: var(--text-3);
+  font-size: 0.92rem;
+  color: rgba(225, 231, 250, 0.58);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.post-card__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  flex-shrink: 0;
 }

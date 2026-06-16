@@ -14,6 +14,7 @@ import { useWorkspace } from "@/hooks/use-workspace";
 import { SelectionState } from "@/types";
 
 const emptySelection: SelectionState = { collectionIds: [], postIds: [] };
+type DashboardTab = "info" | "collections" | "posts";
 
 export function DashboardShell() {
   const { user, loading, isConfigured, signOut } = useAuth();
@@ -23,6 +24,8 @@ export function DashboardShell() {
   const [selection, setSelection] = useState<SelectionState>(emptySelection);
   const [modal, setModal] = useState<ModalState | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [activeTab, setActiveTab] = useState<DashboardTab>("info");
+  const [query, setQuery] = useState("");
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -44,9 +47,27 @@ export function DashboardShell() {
     () => posts.filter((p) => p.collectionId === currentCollectionId),
     [posts, currentCollectionId],
   );
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredCollections = useMemo(() => {
+    if (!normalizedQuery) return visibleCollections;
+    return visibleCollections.filter((collection) =>
+      `${collection.title} ${collection.description}`.toLowerCase().includes(normalizedQuery),
+    );
+  }, [normalizedQuery, visibleCollections]);
+  const filteredPosts = useMemo(() => {
+    if (!normalizedQuery) return visiblePosts;
+    return visiblePosts.filter((post) =>
+      `${post.title} ${post.description} ${post.link} ${post.platform}`.toLowerCase().includes(normalizedQuery),
+    );
+  }, [normalizedQuery, visiblePosts]);
 
   const resetModal = () => setModal(null);
   const resetSelection = () => setSelection(emptySelection);
+  const openCollection = (id: string | null) => {
+    setCurrentCollectionId(id);
+    setActiveTab("info");
+    resetSelection();
+  };
 
   const toggleSelected = (kind: keyof SelectionState, id: string) => {
     setSelection((s) => ({
@@ -70,6 +91,8 @@ export function DashboardShell() {
 
   const userInitial = (user.displayName ?? user.email ?? "U")[0].toUpperCase();
   const userName = user.displayName ?? user.email ?? "My workspace";
+  const pageTitle = currentCollection?.title ?? "All saved posts";
+  const pageDescription = currentCollection?.description ?? "Your complete library of saved social content.";
 
   const hasCollectionSelection = selection.collectionIds.length > 0;
   const hasPostSelection = selection.postIds.length > 0;
@@ -82,19 +105,20 @@ export function DashboardShell() {
         <div className="sidebar__header">
           <div className="sidebar__brand">
             <span className="sidebar__brand-icon">
-              <svg viewBox="0 0 16 16" fill="white" width="14" height="14">
-                <path d="M2 3h5v5H2zM9 3h5v5H9zM2 10h5v3H2zM9 10h5v3H9z" />
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M5 3.5A1.5 1.5 0 0 1 6.5 2h7A1.5 1.5 0 0 1 15 3.5v13.1a.7.7 0 0 1-1.08.59L10 14.68l-3.92 2.51A.7.7 0 0 1 5 16.6V3.5Z" />
               </svg>
             </span>
             Social Save
           </div>
+        </div>
+
+        <div className="sidebar__create">
           <Button
-            variant="ghost"
-            style={{ padding: "0.35rem 0.6rem", fontSize: "1.1rem", lineHeight: 1 }}
+            className="sidebar__create-button"
             onClick={() => setModal({ type: "createCollection", parentId: currentCollectionId })}
-            title="New collection"
           >
-            +
+            <span aria-hidden="true">+</span> New Collection
           </Button>
         </div>
 
@@ -104,7 +128,7 @@ export function DashboardShell() {
             nodes={tree}
             activeId={currentCollectionId}
             selectedIds={selection.collectionIds}
-            onOpen={(id) => { setCurrentCollectionId(id); resetSelection(); }}
+            onOpen={openCollection}
             onToggleSelect={(id) => toggleSelected("collectionIds", id)}
           />
         </div>
@@ -116,6 +140,7 @@ export function DashboardShell() {
               <div className="sidebar__user-name">{userName}</div>
               <div className="sidebar__user-email">{user.email}</div>
             </div>
+            <span className="sidebar__user-chevron" aria-hidden="true">⌄</span>
           </div>
         </div>
       </aside>
@@ -125,17 +150,21 @@ export function DashboardShell() {
         {/* Topbar */}
         <div className="dashboard-topbar">
           <div className="dashboard-search">
-            <span className="dashboard-search__icon">⌕</span>
-            <input placeholder="Search posts and collections…" aria-label="Search" />
+            <span className="dashboard-search__icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.15a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" /></svg>
+            </span>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search posts and collections..."
+              aria-label="Search"
+            />
           </div>
           <div className="dashboard-topbar__actions">
-            <Button onClick={() => setModal({ type: "createPost", collectionId: currentCollectionId })}>
-              + Add post
-            </Button>
-            <Button variant="secondary" onClick={() => setModal({ type: "bulkUpload" })}>
-              Bulk add
-            </Button>
             <ThemeToggle />
+            <button className="icon-button" aria-label="Notifications" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7Z" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
+            </button>
             <Button variant="ghost" onClick={() => void handleSignOut()} disabled={signingOut} style={{ fontSize: "0.85rem" }}>
               {signingOut ? "Signing out…" : "Sign out"}
             </Button>
@@ -144,34 +173,6 @@ export function DashboardShell() {
 
         {/* Content */}
         <div className="dashboard-content">
-          {/* Page header */}
-          <div className="dashboard-page-header">
-            <div className="dashboard-page-header__left">
-              <h1>{currentCollection?.title ?? "All saved posts"}</h1>
-              <p>{currentCollection?.description ?? "Your complete library of saved social content."}</p>
-            </div>
-            {currentCollection && (
-              <div className="dashboard-page-header__actions">
-                <Button variant="ghost" onClick={() => setModal({ type: "editCollection", collection: currentCollection })}>
-                  Edit
-                </Button>
-                <Button variant="ghost" onClick={() => setModal({ type: "moveCollections", collectionIds: [currentCollection.id] })}>
-                  Move
-                </Button>
-                <Button variant="danger" onClick={() => setModal({ type: "deleteCollections", collectionIds: [currentCollection.id] })}>
-                  Delete
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Stats */}
-          <div className="dashboard-stats">
-            <div className="stat-chip"><strong>{collections.length}</strong> collections</div>
-            <div className="stat-chip"><strong>{posts.length}</strong> total posts</div>
-            <div className="stat-chip"><strong>{visiblePosts.length}</strong> here</div>
-          </div>
-
           {/* Bulk action bar */}
           {hasSelection && (
             <div className="bulk-bar">
@@ -202,20 +203,101 @@ export function DashboardShell() {
             </div>
           )}
 
+          <div className="dashboard-tabs-row">
+            <div className="dashboard-tabs" role="tablist" aria-label="Workspace view">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "info"}
+                className={activeTab === "info" ? "dashboard-tab dashboard-tab--active" : "dashboard-tab"}
+                onClick={() => setActiveTab("info")}
+              >
+                Info
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "collections"}
+                className={activeTab === "collections" ? "dashboard-tab dashboard-tab--active" : "dashboard-tab"}
+                onClick={() => setActiveTab("collections")}
+              >
+                Collections
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "posts"}
+                className={activeTab === "posts" ? "dashboard-tab dashboard-tab--active" : "dashboard-tab"}
+                onClick={() => setActiveTab("posts")}
+              >
+                Posts
+              </button>
+            </div>
+            <div className="dashboard-view-actions">
+              <button className="sort-button" type="button">Sort by <strong>Newest</strong><span aria-hidden="true">⌄</span></button>
+              <button className="view-button view-button--active" type="button" aria-label="Grid view">▦</button>
+              <button className="view-button" type="button" aria-label="List view">☷</button>
+            </div>
+          </div>
+
+          {/* Info section */}
+          {activeTab === "info" && <div className="dashboard-page-header">
+            <div className="dashboard-page-header__left">
+              <div className="dashboard-title-row">
+                <h1>{pageTitle}</h1>
+                <span className="dashboard-title-pill">{visiblePosts.length} posts</span>
+              </div>
+              <p>{pageDescription}</p>
+              <div className="dashboard-stats">
+                <div className="stat-chip">
+                  <span className="stat-chip__icon" aria-hidden="true">📁</span>
+                  <strong>{collections.length}</strong>
+                  <span>Collections</span>
+                </div>
+                <div className="stat-chip">
+                  <span className="stat-chip__icon" aria-hidden="true">▣</span>
+                  <strong>{posts.length}</strong>
+                  <span>Total Posts</span>
+                </div>
+                <div className="stat-chip">
+                  <span className="stat-chip__icon" aria-hidden="true">▱</span>
+                  <strong>{visiblePosts.length}</strong>
+                  <span>Posts Here</span>
+                </div>
+              </div>
+            </div>
+            <div className="dashboard-profile-orb" aria-hidden="true">
+              <div className="dashboard-profile-orb__inner">{pageTitle[0]?.toUpperCase() ?? "S"}</div>
+            </div>
+            {currentCollection && (
+              <div className="dashboard-page-header__actions">
+                <button className="icon-button" onClick={() => setModal({ type: "editCollection", collection: currentCollection })} aria-label="Edit collection">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" /></svg>
+                </button>
+                <button className="icon-button" onClick={() => setModal({ type: "moveCollections", collectionIds: [currentCollection.id] })} aria-label="Move collection">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9V5h4" /><path d="m5 5 6 6" /><path d="M19 15v4h-4" /><path d="m19 19-6-6" /></svg>
+                </button>
+                <button className="icon-button icon-button--danger" onClick={() => setModal({ type: "deleteCollections", collectionIds: [currentCollection.id] })} aria-label="Delete collection">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v5M14 11v5" /></svg>
+                </button>
+              </div>
+            )}
+          </div>}
+
           {/* Collections section */}
-          <div className="dashboard-section">
+          {activeTab === "collections" && <div className="dashboard-section">
             <div className="section-header">
               <h2>Collections</h2>
-              <span className="section-header__count">{visibleCollections.length}</span>
+              <span className="section-header__count">{filteredCollections.length}</span>
             </div>
-            {visibleCollections.length > 0 ? (
+            {filteredCollections.length > 0 ? (
               <div className="collection-grid">
-                {visibleCollections.map((collection) => (
+                {filteredCollections.map((collection) => (
                   <CollectionCard
                     key={collection.id}
                     collection={collection}
                     checked={selection.collectionIds.includes(collection.id)}
-                    onOpen={setCurrentCollectionId}
+                    onOpen={openCollection}
                     onToggleSelect={(id) => toggleSelected("collectionIds", id)}
                     onEdit={(item) => setModal({ type: "editCollection", collection: item })}
                     onDelete={(item) => setModal({ type: "deleteCollections", collectionIds: [item.id] })}
@@ -224,24 +306,40 @@ export function DashboardShell() {
               </div>
             ) : (
               <div className="empty-state">
-                <span className="empty-state__icon">📁</span>
+                <span className="empty-state__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" /></svg>
+                </span>
                 <p>No collections here yet.</p>
                 <Button variant="secondary" onClick={() => setModal({ type: "createCollection", parentId: currentCollectionId })}>
-                  Create collection
+                  Create Collection
                 </Button>
               </div>
             )}
-          </div>
+          </div>}
 
           {/* Posts section */}
-          <div className="dashboard-section">
-            <div className="section-header">
-              <h2>Posts</h2>
-              <span className="section-header__count">{visiblePosts.length}</span>
+          {activeTab === "posts" && <div className="dashboard-section">
+            <div className="posts-header-row">
+              <div className="section-header section-header--posts">
+                <h2>Posts <span>({filteredPosts.length})</span></h2>
+              </div>
+              <div className="posts-tools">
+                <Button variant="secondary" onClick={() => setModal({ type: "bulkUpload" })}>
+                  Bulk add
+                </Button>
+                <Button onClick={() => setModal({ type: "createPost", collectionId: currentCollectionId })}>
+                  + Add post
+                </Button>
+                <div className="post-filter">
+                  <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m21 21-4.35-4.35m2.35-5.15a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" /></svg></span>
+                  <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter posts..." aria-label="Filter posts" />
+                  <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" /></svg></span>
+                </div>
+              </div>
             </div>
-            {visiblePosts.length > 0 ? (
+            {filteredPosts.length > 0 ? (
               <div className="post-grid">
-                {visiblePosts.map((post) => (
+                {filteredPosts.map((post) => (
                   <PostCard
                     key={post.id}
                     post={post}
@@ -261,7 +359,7 @@ export function DashboardShell() {
                 </Button>
               </div>
             )}
-          </div>
+          </div>}
         </div>
       </main>
 
