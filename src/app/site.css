@@ -67,6 +67,18 @@
 .site-header__actions {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.6rem;
   flex-shrink: 0;
 }
+
+.site-header .theme-toggle {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+.site-header .theme-toggle svg {
+  width: 16px;
+  height: 16px;
+}
+

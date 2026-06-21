@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/components/auth/auth-provider";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 export function SiteHeader() {
   const { user, signOut } = useAuth();
@@ -28,6 +29,7 @@ export function SiteHeader() {
 
         {/* Right actions */}
         <div className="site-header__actions">
+          <ThemeToggle />
           {user ? (
             <>
               <Link href="/dashboard" className="l-btn l-btn--secondary" style={{ fontSize: "13px", padding: "6px 12px" }}>

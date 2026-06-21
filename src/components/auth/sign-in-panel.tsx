@@ -43,26 +43,26 @@ export function SignInPanel() {
 
             {/* Card content lines */}
             <rect x="36" y="60" width="80" height="8" rx="4" fill="rgba(124,106,247,0.4)" />
-            <rect x="36" y="76" width="120" height="6" rx="3" fill="rgba(255,255,255,0.1)" />
-            <rect x="36" y="90" width="100" height="6" rx="3" fill="rgba(255,255,255,0.07)" />
-            <rect x="36" y="116" width="60" height="6" rx="3" fill="rgba(255,255,255,0.07)" />
+            <rect x="36" y="76" width="120" height="6" rx="3" fill="currentColor" opacity="0.1" />
+            <rect x="36" y="90" width="100" height="6" rx="3" fill="currentColor" opacity="0.07" />
+            <rect x="36" y="116" width="60" height="6" rx="3" fill="currentColor" opacity="0.07" />
 
             <rect x="236" y="38" width="70" height="8" rx="4" fill="rgba(52,211,153,0.5)" />
-            <rect x="236" y="54" width="110" height="6" rx="3" fill="rgba(255,255,255,0.1)" />
-            <rect x="236" y="68" width="90" height="6" rx="3" fill="rgba(255,255,255,0.07)" />
+            <rect x="236" y="54" width="110" height="6" rx="3" fill="currentColor" opacity="0.1" />
+            <rect x="236" y="68" width="90" height="6" rx="3" fill="currentColor" opacity="0.07" />
 
             <rect x="236" y="138" width="70" height="8" rx="4" fill="rgba(251,191,36,0.5)" />
-            <rect x="236" y="154" width="110" height="6" rx="3" fill="rgba(255,255,255,0.1)" />
-            <rect x="236" y="168" width="80" height="6" rx="3" fill="rgba(255,255,255,0.07)" />
+            <rect x="236" y="154" width="110" height="6" rx="3" fill="currentColor" opacity="0.1" />
+            <rect x="236" y="168" width="80" height="6" rx="3" fill="currentColor" opacity="0.07" />
 
             <rect x="36" y="178" width="70" height="8" rx="4" fill="rgba(244,114,182,0.5)" />
-            <rect x="36" y="194" width="110" height="6" rx="3" fill="rgba(255,255,255,0.1)" />
-            <rect x="36" y="208" width="90" height="6" rx="3" fill="rgba(255,255,255,0.07)" />
+            <rect x="36" y="194" width="110" height="6" rx="3" fill="currentColor" opacity="0.1" />
+            <rect x="36" y="208" width="90" height="6" rx="3" fill="currentColor" opacity="0.07" />
 
             {/* Connection dots */}
             <circle cx="200" cy="90" r="5" fill="rgba(124,106,247,0.6)" />
             <circle cx="200" cy="160" r="5" fill="rgba(52,211,153,0.6)" />
-            <line x1="200" y1="90" x2="200" y2="160" stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="4 4" />
+            <line x1="200" y1="90" x2="200" y2="160" stroke="currentColor" opacity="0.08" strokeWidth="1" strokeDasharray="4 4" />
 
             {/* Floating accent */}
             <circle cx="340" cy="240" r="30" fill="rgba(124,106,247,0.06)" stroke="rgba(124,106,247,0.15)" strokeWidth="1" />

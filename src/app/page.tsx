@@ -255,7 +255,7 @@ export default function HomePage() {
           <div className="l-testimonials__grid">
             {testimonials.map((t) => (
               <div key={t.name} className="l-testimonial">
-                <p className="l-testimonial__quote">"{t.quote}"</p>
+                <p className="l-testimonial__quote">&ldquo;{t.quote}&rdquo;</p>
                 <div className="l-testimonial__author">
                   <div className="l-testimonial__avatar">{t.initial}</div>
                   <div>
