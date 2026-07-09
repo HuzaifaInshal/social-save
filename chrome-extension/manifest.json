@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Social Save Bookmarker",
+  "version": "1.0.0",
+  "description": "Save posts and bookmarks directly to your Social Save collections.",
+  "permissions": [
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "https://*.web.app/*",
+    "https://*.firebaseapp.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost/*",
+        "http://127.0.0.1/*",
+        "https://*.web.app/*",
+        "https://*.firebaseapp.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}
