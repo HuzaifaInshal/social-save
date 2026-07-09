@@ -8,6 +8,7 @@ import { CollectionTree } from "@/components/collections/collection-tree";
 import { DashboardModals, ModalState } from "@/components/dashboard/dashboard-modals";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { PostCard } from "@/components/posts/post-card";
+import { PostEmbed } from "@/components/posts/post-embed";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -399,15 +400,7 @@ export function DashboardShell() {
                         </div>
                       </div>
                       <div className="post-single-frame">
-                        <iframe
-                          src={post.link}
-                          title={post.title}
-                          className="post-iframe"
-                        />
-                        <div className="iframe-overlay-hint">
-                          <p>If the content below does not load, the platform may be blocking embedded views.</p>
-                          <a href={post.link} target="_blank" rel="noreferrer" className="post-single-link">Open original post</a>
-                        </div>
+                        <PostEmbed post={post} />
                       </div>
                     </div>
                     <div className="post-single-nav">
