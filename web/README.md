@@ -10,7 +10,19 @@ A Next.js + TypeScript web application for organizing saved social posts into ne
 - **User Authentication**: Google-only sign-in with Firebase Authentication.
 - **Theme Support**: Fully responsive UI with sleek Light and Dark mode options.
 
-![Web App Dashboard Preview](../screenshots/dashboard.png)
+## Gallery & Preview
+
+### Landing Page
+![Social Save Landing Page](../screenshots/2.png)
+
+### User Authentication (Sign In)
+![Social Save Welcome / Sign In Page](../screenshots/4.png)
+
+### Dashboard - Dark Theme
+![Social Save Dashboard Dark Mode](../screenshots/1.png)
+
+### Dashboard - Light Theme
+![Social Save Dashboard Light Mode](../screenshots/3.png)
 
 ## Development Setup
 

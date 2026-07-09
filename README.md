@@ -12,8 +12,13 @@ social-save/
 ├── chrome-extension/ # Chrome extension for saving posts directly from browser
 └── screenshots/      # Application screenshots and assets
 ```
+## Preview
 
-![Social Save Dashboard Mockup](./screenshots/dashboard.png)
+### Landing Page
+![Social Save Landing Page](./screenshots/2.png)
+
+### Dashboard Overview (Dark Mode)
+![Social Save Dashboard Dark Mode](./screenshots/1.png)
 
 ## Subprojects
 
