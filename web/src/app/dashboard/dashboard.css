@@ -676,6 +676,63 @@
   text-decoration: underline;
 }
 
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  border: 1px solid rgba(137, 155, 203, 0.14);
+  background: rgba(17, 26, 47, 0.5);
+  color: rgba(229, 233, 250, 0.7);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+.copy-btn:hover {
+  background: rgba(33, 44, 72, 0.8);
+  color: #fff;
+  border-color: rgba(147, 164, 208, 0.3);
+}
+
+.copy-btn--copied {
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.copy-btn svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+:root[data-theme="light"] .copy-btn {
+  border-color: rgba(92, 112, 150, 0.16);
+  background: rgba(255, 255, 255, 0.8);
+  color: rgba(31, 41, 68, 0.66);
+}
+
+:root[data-theme="light"] .copy-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+:root[data-theme="light"] .copy-btn--copied {
+  color: #059669;
+  border-color: rgba(5, 150, 105, 0.3);
+  background: rgba(5, 150, 105, 0.08);
+}
+
+
 .post-single-frame {
   flex: 1;
   background: #000;

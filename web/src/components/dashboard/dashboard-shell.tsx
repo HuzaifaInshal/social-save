@@ -32,6 +32,15 @@ export function DashboardShell() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [activePostIndex, setActivePostIndex] = useState(0);
   const [query, setQuery] = useState("");
+  const [copiedPostId, setCopiedPostId] = useState<string | null>(null);
+
+  const handleCopyLink = (link: string, postId: string) => {
+    navigator.clipboard.writeText(link);
+    setCopiedPostId(postId);
+    setTimeout(() => {
+      setCopiedPostId((currentId) => (currentId === postId ? null : currentId));
+    }, 2000);
+  };
 
   // Bridge events to communicate with Chrome Extension securely
   useEffect(() => {
@@ -455,14 +464,33 @@ export function DashboardShell() {
                         <div className="post-single-header__meta">
                           <h3 className="post-single-title">{post.title}</h3>
                           {post.description && <p className="post-single-desc">{post.description}</p>}
-                          <a href={post.link} target="_blank" rel="noreferrer" className="post-single-link">
-                            {post.link.length > 60 ? `${post.link.substring(0, 60)}...` : post.link}
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: "6px" }}>
-                              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                              <polyline points="15 3 21 3 21 9" />
-                              <line x1="10" y1="14" x2="21" y2="3" />
-                            </svg>
-                          </a>
+                          <div style={{ display: "inline-flex", alignItems: "center" }}>
+                            <a href={post.link} target="_blank" rel="noreferrer" className="post-single-link">
+                              {post.link.length > 60 ? `${post.link.substring(0, 60)}...` : post.link}
+                              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: "6px" }}>
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                <polyline points="15 3 21 3 21 9" />
+                                <line x1="10" y1="14" x2="21" y2="3" />
+                              </svg>
+                            </a>
+                            <button
+                              className={cn("copy-btn", copiedPostId === post.id && "copy-btn--copied")}
+                              onClick={() => handleCopyLink(post.link, post.id)}
+                              title={copiedPostId === post.id ? "Link copied!" : "Copy link"}
+                              aria-label="Copy link"
+                            >
+                              {copiedPostId === post.id ? (
+                                <svg viewBox="0 0 24 24">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              ) : (
+                                <svg viewBox="0 0 24 24">
+                                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
                         </div>
                         <div className="post-single-header__actions">
                            <Button variant="secondary" onClick={() => setModal({ type: "editPost", post })}>Edit</Button>
