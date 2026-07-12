@@ -22,6 +22,10 @@ export function hasFirebaseEnv() {
   return Object.values(firebaseConfig).every(Boolean);
 }
 
+export function getFirebaseConfig() {
+  return firebaseConfig;
+}
+
 let cachedApp: FirebaseApp | null = null;
 
 export function getFirebaseApp() {

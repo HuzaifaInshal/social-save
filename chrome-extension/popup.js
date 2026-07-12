@@ -41,6 +41,178 @@ function updateConnectionHeader(connected, text = "Connected") {
   }
 }
 
+// Firebase REST API helpers
+async function refreshAuthToken(apiKey, refreshToken) {
+  const url = `https://securetoken.googleapis.com/v1/token?key=${apiKey}`;
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: refreshToken
+  });
+  
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: body.toString()
+  });
+  
+  if (!res.ok) {
+    throw new Error("Failed to refresh token: " + res.statusText);
+  }
+  
+  const data = await res.json();
+  return {
+    idToken: data.access_token,
+    refreshToken: data.refresh_token,
+    uid: data.user_id
+  };
+}
+
+async function restFetchCollections(projectId, idToken, uid) {
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
+  const body = {
+    structuredQuery: {
+      from: [{ collectionId: "collections" }],
+      where: {
+        fieldFilter: {
+          field: { fieldPath: "ownerId" },
+          op: "EQUAL",
+          value: { stringValue: uid }
+        }
+      }
+    }
+  };
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${idToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error("Failed to fetch collections: " + res.statusText);
+  const data = await res.json();
+  return data
+    .filter(item => item.document)
+    .map(item => {
+      const doc = item.document;
+      const fields = doc.fields;
+      const id = doc.name.split("/").pop();
+      return {
+        id,
+        title: fields.title?.stringValue || "",
+        parentId: fields.parentId?.stringValue || null
+      };
+    });
+}
+
+async function restFetchPosts(projectId, idToken, uid) {
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
+  const body = {
+    structuredQuery: {
+      from: [{ collectionId: "posts" }],
+      where: {
+        fieldFilter: {
+          field: { fieldPath: "ownerId" },
+          op: "EQUAL",
+          value: { stringValue: uid }
+        }
+      }
+    }
+  };
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${idToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error("Failed to fetch posts: " + res.statusText);
+  const data = await res.json();
+  return data
+    .filter(item => item.document)
+    .map(item => {
+      const doc = item.document;
+      const fields = doc.fields;
+      const id = doc.name.split("/").pop();
+      return {
+        id,
+        link: fields.link?.stringValue || "",
+        title: fields.title?.stringValue || "",
+        collectionId: fields.collectionId?.stringValue || null
+      };
+    });
+}
+
+const getPlatformFromLink = (url) => {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    if (hostname.includes("instagram.com")) return "Instagram";
+    if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) return "YouTube";
+    if (hostname.includes("tiktok.com")) return "TikTok";
+    if (hostname.includes("facebook.com")) return "Facebook";
+    if (hostname.includes("twitter.com") || hostname.includes("x.com")) return "Twitter / X";
+    if (hostname.includes("linkedin.com")) return "LinkedIn";
+    if (hostname.includes("pinterest.com")) return "Pinterest";
+    if (hostname.includes("reddit.com")) return "Reddit";
+    return "Web";
+  } catch {
+    return "Web";
+  }
+};
+
+async function restAddBookmark(projectId, idToken, uid, { title, description, link, collectionId }) {
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/posts`;
+  const fields = {
+    ownerId: { stringValue: uid },
+    title: { stringValue: title },
+    description: { stringValue: description || "" },
+    link: { stringValue: link },
+    platform: { stringValue: getPlatformFromLink(link) },
+    createdAt: { doubleValue: Date.now() },
+    updatedAt: { doubleValue: Date.now() }
+  };
+
+  if (collectionId) {
+    fields.collectionId = { stringValue: collectionId };
+  } else {
+    fields.collectionId = { nullValue: null };
+  }
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${idToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ fields })
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error?.message || "Failed to create bookmark");
+  }
+  return true;
+}
+
+async function restRemoveBookmark(projectId, idToken, postId) {
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/posts/${postId}`;
+  const res = await fetch(url, {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${idToken}`
+    }
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error?.message || "Failed to remove bookmark");
+  }
+  return true;
+}
+
 // Main logic
 document.addEventListener("DOMContentLoaded", async () => {
   // 1. Get active page info
@@ -69,69 +241,111 @@ document.addEventListener("DOMContentLoaded", async () => {
     chrome.tabs.create({ url: "http://localhost:3000" });
   };
 
-  // 2. Try to connect to Social Save web app
+  // 2. Try to connect to Social Save web app tab
+  let isOfflineMode = false;
+  let offlineData = null;
+  let collections = [];
+  let posts = [];
+
   const webAppTab = await findWebAppTab();
-  if (!webAppTab) {
-    updateConnectionHeader(false, "Disconnected");
-    showState("state-disconnected");
-    return;
-  }
-
-  // Ping the content script
-  let isConnected = false;
-  try {
-    const response = await new Promise((resolve, reject) => {
-      chrome.tabs.sendMessage(webAppTab.id, { action: "PING" }, (res) => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(res);
-        }
+  
+  if (webAppTab) {
+    // Ping the content script
+    let isConnected = false;
+    try {
+      const response = await new Promise((resolve, reject) => {
+        chrome.tabs.sendMessage(webAppTab.id, { action: "PING" }, (res) => {
+          if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+          else resolve(res);
+        });
       });
+      isConnected = response && response.status === "CONNECTED";
+    } catch (err) {
+      console.warn("Ping failed, bridge not ready.", err);
+    }
+
+    if (isConnected) {
+      updateConnectionHeader(true, "Connected");
+
+      // Retrieve auth state, collections, and existing bookmarks
+      let appState;
+      try {
+        appState = await new Promise((resolve, reject) => {
+          chrome.tabs.sendMessage(webAppTab.id, { action: "GET_STATUS" }, (res) => {
+            if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+            else resolve(res);
+          });
+        });
+      } catch (err) {
+        console.error("Error getting state:", err);
+      }
+
+      if (appState && appState.authenticated) {
+        // Cache the credentials and config
+        await new Promise(resolve => {
+          chrome.storage.local.set({
+            firebaseConfig: appState.firebaseConfig,
+            refreshToken: appState.refreshToken,
+            uid: appState.uid
+          }, resolve);
+        });
+
+        collections = appState.collections;
+        posts = appState.posts;
+      } else {
+        // Web tab is open but not authenticated
+        updateConnectionHeader(false, "Authentication Required");
+        document.getElementById("loading-message").textContent = "Please sign in to the web app first.";
+        showState("state-loading");
+        return;
+      }
+    } else {
+      isOfflineMode = true;
+    }
+  } else {
+    isOfflineMode = true;
+  }
+
+  // 3. If offline/no-tab mode, load credentials from cache and use REST API
+  if (isOfflineMode) {
+    const cached = await new Promise(resolve => {
+      chrome.storage.local.get(["firebaseConfig", "refreshToken", "uid"], resolve);
     });
-    isConnected = response && response.status === "CONNECTED";
-  } catch (err) {
-    console.warn("Ping failed, bridge not ready.", err);
+
+    if (cached && cached.firebaseConfig && cached.refreshToken && cached.uid) {
+      try {
+        updateConnectionHeader(true, "Connected (Cached)");
+        
+        // Refresh token to get fresh idToken
+        const fresh = await refreshAuthToken(cached.firebaseConfig.apiKey, cached.refreshToken);
+        
+        // Save the new refresh token
+        await new Promise(resolve => {
+          chrome.storage.local.set({ refreshToken: fresh.refreshToken }, resolve);
+        });
+        
+        offlineData = {
+          idToken: fresh.idToken,
+          projectId: cached.firebaseConfig.projectId,
+          uid: cached.uid
+        };
+
+        collections = await restFetchCollections(offlineData.projectId, offlineData.idToken, offlineData.uid);
+        posts = await restFetchPosts(offlineData.projectId, offlineData.idToken, offlineData.uid);
+      } catch (err) {
+        console.error("Failed to connect via cached token:", err);
+        updateConnectionHeader(false, "Connection Failed");
+        showState("state-disconnected");
+        return;
+      }
+    } else {
+      updateConnectionHeader(false, "Disconnected");
+      showState("state-disconnected");
+      return;
+    }
   }
-
-  if (!isConnected) {
-    updateConnectionHeader(false, "Bridge Offline");
-    showState("state-disconnected");
-    return;
-  }
-
-  updateConnectionHeader(true, "Connected");
-
-  // 3. Retrieve auth state, collections, and existing bookmarks
-  let appState;
-  try {
-    appState = await new Promise((resolve, reject) => {
-      chrome.tabs.sendMessage(webAppTab.id, { action: "GET_STATUS" }, (res) => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(res);
-        }
-      });
-    });
-  } catch (err) {
-    console.error("Error getting state:", err);
-    updateConnectionHeader(false, "Connection Error");
-    showState("state-disconnected");
-    return;
-  }
-
-  if (!appState || !appState.authenticated) {
-    updateConnectionHeader(false, "Authentication Required");
-    document.getElementById("loading-message").textContent = "Please sign in to the web app first.";
-    showState("state-loading");
-    return;
-  }
-
-  const { collections, posts } = appState;
 
   // 4. Check if current page is already bookmarked
-  // We can normalize URL (strip query parameters or trailing slashes for loose match)
   const normalizeUrl = (u) => {
     try {
       const parsed = new URL(u);
@@ -158,25 +372,25 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("btn-unbookmark").textContent = "Removing...";
       
       try {
-        const res = await new Promise((resolve, reject) => {
-          chrome.tabs.sendMessage(webAppTab.id, {
-            action: "REMOVE_BOOKMARK",
-            payload: { link: existingBookmark.link }
-          }, (response) => {
-            if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-            else resolve(response);
-          });
-        });
-        
-        if (res && res.success) {
-          window.location.reload(); // Refresh popup to show form state
+        if (isOfflineMode) {
+          await restRemoveBookmark(offlineData.projectId, offlineData.idToken, existingBookmark.id);
         } else {
-          alert("Failed to unbookmark: " + (res?.error || "Unknown error"));
-          document.getElementById("btn-unbookmark").disabled = false;
-          document.getElementById("btn-unbookmark").textContent = "Remove Bookmark";
+          const res = await new Promise((resolve, reject) => {
+            chrome.tabs.sendMessage(webAppTab.id, {
+              action: "REMOVE_BOOKMARK",
+              payload: { link: existingBookmark.link }
+            }, (response) => {
+              if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+              else resolve(response);
+            });
+          });
+          if (!res || !res.success) {
+            throw new Error(res?.error || "Unknown error");
+          }
         }
+        window.location.reload();
       } catch (err) {
-        alert("Error: " + err.message);
+        alert("Failed to unbookmark: " + err.message);
         document.getElementById("btn-unbookmark").disabled = false;
         document.getElementById("btn-unbookmark").textContent = "Remove Bookmark";
       }
@@ -216,7 +430,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     sortedCollections.forEach(c => {
       const option = document.createElement("option");
       option.value = c.id;
-      // Pre-fill indent with spaces to represent structure
       option.textContent = "\u00A0\u00A0".repeat(c.depth) + (c.depth > 0 ? "↳ " : "") + c.title;
       select.appendChild(option);
     });
@@ -236,25 +449,27 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("btn-bookmark").textContent = "Saving...";
 
       try {
-        const res = await new Promise((resolve, reject) => {
-          chrome.tabs.sendMessage(webAppTab.id, {
-            action: "ADD_BOOKMARK",
-            payload: { title, description, link: pageUrl, collectionId }
-          }, (response) => {
-            if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-            else resolve(response);
+        if (isOfflineMode) {
+          await restAddBookmark(offlineData.projectId, offlineData.idToken, offlineData.uid, {
+            title, description, link: pageUrl, collectionId
           });
-        });
-
-        if (res && res.success) {
-          window.location.reload(); // Refresh popup to show bookmarked state
         } else {
-          alert("Failed to save: " + (res?.error || "Unknown error"));
-          document.getElementById("btn-bookmark").disabled = false;
-          document.getElementById("btn-bookmark").textContent = "Save Bookmark";
+          const res = await new Promise((resolve, reject) => {
+            chrome.tabs.sendMessage(webAppTab.id, {
+              action: "ADD_BOOKMARK",
+              payload: { title, description, link: pageUrl, collectionId }
+            }, (response) => {
+              if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+              else resolve(response);
+            });
+          });
+          if (!res || !res.success) {
+            throw new Error(res?.error || "Unknown error");
+          }
         }
+        window.location.reload();
       } catch (err) {
-        alert("Error: " + err.message);
+        alert("Failed to save bookmark: " + err.message);
         document.getElementById("btn-bookmark").disabled = false;
         document.getElementById("btn-bookmark").textContent = "Save Bookmark";
       }

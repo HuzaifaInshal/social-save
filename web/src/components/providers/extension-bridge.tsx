@@ -5,6 +5,8 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { createPost, deletePosts } from "@/lib/firebase/firestore";
 
+import { getFirebaseConfig } from "@/lib/firebase/config";
+
 export function ExtensionBridge() {
   const { user } = useAuth();
   const { collections, posts } = useWorkspace(user?.uid);
@@ -25,6 +27,9 @@ export function ExtensionBridge() {
         if (action === "GET_STATUS") {
           response = {
             authenticated: true,
+            uid: user.uid,
+            refreshToken: user.refreshToken,
+            firebaseConfig: getFirebaseConfig(),
             collections: collections.map((c) => ({
               id: c.id,
               title: c.title,
