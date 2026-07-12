@@ -258,16 +258,22 @@ let cachedPosts = null;
 let cachedOfflineData = null;
 
 async function initPanel() {
-  // Fetch collection select persistence value from storage first to prevent race conditions
+  // Fetch collection select persistence value and autoFetchTitle setting first
+  let autoFetchTitle = true;
   try {
     const storageRes = await new Promise(resolve => {
-      chrome.storage.local.get(["lastSelectedCollectionId"], resolve);
+      chrome.storage.local.get(["lastSelectedCollectionId", "autoFetchTitle"], resolve);
     });
-    if (storageRes && storageRes.lastSelectedCollectionId !== undefined) {
-      lastSelectedCollectionId = storageRes.lastSelectedCollectionId;
+    if (storageRes) {
+      if (storageRes.lastSelectedCollectionId !== undefined) {
+        lastSelectedCollectionId = storageRes.lastSelectedCollectionId;
+      }
+      if (storageRes.autoFetchTitle !== undefined) {
+        autoFetchTitle = storageRes.autoFetchTitle;
+      }
     }
   } catch (e) {
-    console.error("Error loading lastSelectedCollectionId:", e);
+    console.error("Error loading settings:", e);
   }
 
   // 1. Get active page info
@@ -394,7 +400,7 @@ async function initPanel() {
   } else {
     // Unsaved page - show form to bookmark
     document.getElementById("txt-page-url").textContent = pageUrl;
-    document.getElementById("inp-title").value = pageTitle;
+    document.getElementById("inp-title").value = autoFetchTitle ? pageTitle : "";
 
     // Populating Collections custom dropdown
     const options = [
@@ -454,17 +460,15 @@ async function initPanel() {
       const description = document.getElementById("inp-description").value.trim();
       const collectionId = selectedCollectionId;
 
-      if (!title) {
-        alert("Please enter a title.");
-        return;
-      }
+      // Fallback to active tab title if input title is empty
+      const finalTitle = title || pageTitle || "Untitled Bookmark";
 
       btnBookmark.disabled = true;
       btnBookmark.innerHTML = `<div class="spinner" style="margin-bottom: 0; display: inline-block; vertical-align: middle; margin-right: 0.4rem;"></div> Saving...`;
 
       try {
         const createdPostId = await restAddBookmark(cachedOfflineData.projectId, cachedOfflineData.idToken, cachedOfflineData.uid, {
-          title, description, link: pageUrl, collectionId
+          title: finalTitle, description, link: pageUrl, collectionId
         });
         
         // Success: Show toast notification with Undo action instead of switching pages
@@ -559,11 +563,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // Load viewStyle from storage and set custom select value
+  // Load settings from storage and set values
   const config = await new Promise(resolve => {
-    chrome.storage.local.get(["viewStyle"], resolve);
+    chrome.storage.local.get(["viewStyle", "autoFetchTitle"], resolve);
   });
   viewStyleSelect.setValue(config.viewStyle || "sidepanel");
+  document.getElementById("chk-auto-fetch-title").checked = config.autoFetchTitle !== false;
+
+  // Bind auto-fetch settings change
+  document.getElementById("chk-auto-fetch-title").onchange = async (e) => {
+    const isChecked = e.target.checked;
+    await new Promise(resolve => {
+      chrome.storage.local.set({ autoFetchTitle: isChecked }, resolve);
+    });
+    // If user is currently looking at the save form, reload it to reflect title change
+    const activeEl = document.querySelector(".state.active");
+    if (activeEl && activeEl.id === "state-form") {
+      initPanel();
+    }
+  };
 
   // Bind logout click
   document.getElementById("btn-logout").onclick = async () => {
