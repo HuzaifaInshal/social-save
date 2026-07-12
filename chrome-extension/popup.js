@@ -258,6 +258,18 @@ let cachedPosts = null;
 let cachedOfflineData = null;
 
 async function initPanel() {
+  // Fetch collection select persistence value from storage first to prevent race conditions
+  try {
+    const storageRes = await new Promise(resolve => {
+      chrome.storage.local.get(["lastSelectedCollectionId"], resolve);
+    });
+    if (storageRes && storageRes.lastSelectedCollectionId !== undefined) {
+      lastSelectedCollectionId = storageRes.lastSelectedCollectionId;
+    }
+  } catch (e) {
+    console.error("Error loading lastSelectedCollectionId:", e);
+  }
+
   // 1. Get active page info
   let activeTab;
   try {
