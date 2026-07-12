@@ -423,61 +423,7 @@
       transform: translateY(0);
     }
 
-    /* Toast Notification styles */
-    .toast-container {
-      position: absolute;
-      bottom: 3.5rem;
-      left: 1.25rem;
-      right: 1.25rem;
-      background: var(--surface);
-      border: 1px solid var(--border-strong);
-      border-radius: var(--radius);
-      padding: 0.65rem 0.9rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: var(--shadow);
-      z-index: 2000;
-      transition: all 0.2s ease;
-      transform: translateY(10px);
-      opacity: 0;
-      pointer-events: none;
-    }
 
-    :root[data-theme="dark"] .toast-container {
-      background: #10111a;
-      border-color: rgba(99, 81, 241, 0.4);
-    }
-
-    .toast-container.active {
-      transform: translateY(0);
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    #toast-message {
-      font-size: 0.85rem;
-      color: var(--text);
-      font-weight: 500;
-    }
-
-    .toast-undo-btn {
-      background: none;
-      border: none;
-      color: var(--accent);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      outline: none;
-      padding: 0.2rem 0.4rem;
-      border-radius: 4px;
-      transition: background 0.15s, color 0.15s;
-    }
-
-    .toast-undo-btn:hover {
-      background: var(--accent-glow);
-      color: var(--accent-hover);
-    }
   </style>
 </head>
 <body>
@@ -603,11 +549,7 @@
       <button id="btn-back-settings" class="btn btn--secondary" style="margin-top: 0.5rem;">Back</button>
     </div>
 
-    <!-- Toast Notification Overlay -->
-    <div id="toast-container" class="toast-container">
-      <span id="toast-message">Bookmark saved successfully!</span>
-      <button id="btn-toast-undo" class="toast-undo-btn">Undo</button>
-    </div>
+
 
     <!-- Footer / Settings Button & Theme Toggle -->
     <div class="footer" style="margin-top: auto; padding-top: 0.75rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">

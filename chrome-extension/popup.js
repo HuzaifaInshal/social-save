@@ -471,29 +471,10 @@ async function initPanel() {
           title: finalTitle, description, link: pageUrl, collectionId
         });
         
-        // Success: Show toast notification with Undo action instead of switching pages
-        showToast("Bookmark saved successfully!", async () => {
-          showToastSpinner(true);
-          try {
-            await restRemoveBookmark(cachedOfflineData.projectId, cachedOfflineData.idToken, createdPostId);
-            // Clear cache and rebuild panel (which stays on form state because post is deleted)
-            cachedCollections = null;
-            cachedPosts = null;
-            await initPanel();
-            hideToast();
-          } catch (err) {
-            alert("Failed to undo: " + err.message);
-            showToastSpinner(false);
-          }
-        });
-
         // Clear caches so the next check gets fresh database state
         cachedCollections = null;
         cachedPosts = null;
-
-        // Reset Save Bookmark button back to active immediately
-        btnBookmark.disabled = false;
-        btnBookmark.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px; margin-right: 0.45rem;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg> Save Bookmark`;
+        await initPanel();
       } catch (err) {
         alert("Failed to save bookmark: " + err.message);
         btnBookmark.disabled = false;
@@ -510,8 +491,6 @@ let activeStateBeforeSettings = "state-loading";
 
 // Main DOM entry
 document.addEventListener("DOMContentLoaded", async () => {
-  initPanel();
-
   // Setup theme button state and listener
   let currentTheme = document.documentElement.getAttribute("data-theme") || "light";
   
@@ -555,6 +534,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Initialize custom select components
   collectionSelect = setupCustomSelect("select-collection", (val) => {
     selectedCollectionId = val || null;
+    lastSelectedCollectionId = val || "";
+    chrome.storage.local.set({ lastSelectedCollectionId: lastSelectedCollectionId });
   });
   
   viewStyleSelect = setupCustomSelect("select-view-style", async (val) => {
@@ -595,6 +576,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.location.reload();
     }
   };
+
+  // Run initial panel build after all custom selects and event bindings are set up
+  initPanel();
 });
 
 // Global outside-click listener to close custom dropdowns
@@ -668,53 +652,4 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
-// Toast notification handlers
-let toastTimeout = null;
 
-function showToast(message, onUndo) {
-  const container = document.getElementById("toast-container");
-  const msgEl = document.getElementById("toast-message");
-  const undoBtn = document.getElementById("btn-toast-undo");
-  
-  if (!container || !msgEl || !undoBtn) return;
-  
-  msgEl.textContent = message;
-  undoBtn.style.display = "inline-block";
-  undoBtn.innerHTML = "Undo";
-  undoBtn.disabled = false;
-  
-  undoBtn.onclick = async (e) => {
-    e.stopPropagation();
-    if (onUndo) {
-      await onUndo();
-    }
-  };
-  
-  container.classList.add("active");
-  
-  if (toastTimeout) clearTimeout(toastTimeout);
-  
-  toastTimeout = setTimeout(() => {
-    hideToast();
-  }, 5000);
-}
-
-function showToastSpinner(loading) {
-  const undoBtn = document.getElementById("btn-toast-undo");
-  if (undoBtn) {
-    if (loading) {
-      undoBtn.disabled = true;
-      undoBtn.innerHTML = `<div class="spinner" style="width:12px; height:12px; border-width:1.5px; margin-bottom: 0; display: inline-block; vertical-align: middle;"></div>`;
-    } else {
-      undoBtn.disabled = false;
-      undoBtn.innerHTML = "Undo";
-    }
-  }
-}
-
-function hideToast() {
-  const container = document.getElementById("toast-container");
-  if (container) {
-    container.classList.remove("active");
-  }
-}
