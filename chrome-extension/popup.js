@@ -18,6 +18,14 @@
 let selectedCollectionId = null;
 let collectionSelect = null;
 let viewStyleSelect = null;
+let lastSelectedCollectionId = "";
+
+// Immediately load stored collection preference to sync dropdowns across tabs
+chrome.storage.local.get(["lastSelectedCollectionId"], (res) => {
+  if (res && res.lastSelectedCollectionId) {
+    lastSelectedCollectionId = res.lastSelectedCollectionId;
+  }
+});
 
 const webAppPatterns = [
   "*://localhost/*",
@@ -220,11 +228,12 @@ async function restAddBookmark(projectId, idToken, uid, { title, description, li
     body: JSON.stringify({ fields })
   });
 
+  const data = await res.json();
   if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.error?.message || "Failed to create bookmark");
+    throw new Error(data.error?.message || "Failed to create bookmark");
   }
-  return true;
+  const parts = data.name.split("/");
+  return parts[parts.length - 1];
 }
 
 async function restRemoveBookmark(projectId, idToken, postId) {
@@ -407,14 +416,28 @@ async function initPanel() {
       options.push({ value: c.id, label: indent + c.title });
     });
 
+    // Always reset Save Bookmark button back to original active state when rendering the form state
+    const btnBookmark = document.getElementById("btn-bookmark");
+    btnBookmark.disabled = false;
+    btnBookmark.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px; margin-right: 0.45rem;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg> Save Bookmark`;
+
     if (collectionSelect) {
       collectionSelect.updateOptions(options);
-      collectionSelect.setValue("");
+      // Persist dropdown value across tabs/refetches using lastSelectedCollectionId
+      const exists = options.some(o => o.value === lastSelectedCollectionId);
+      if (exists) {
+        collectionSelect.setValue(lastSelectedCollectionId);
+        selectedCollectionId = lastSelectedCollectionId || null;
+      } else {
+        collectionSelect.setValue("");
+        selectedCollectionId = null;
+      }
+    } else {
+      selectedCollectionId = null;
     }
-    selectedCollectionId = null;
 
     // Bind Bookmark click
-    document.getElementById("btn-bookmark").onclick = async () => {
+    btnBookmark.onclick = async () => {
       const title = document.getElementById("inp-title").value.trim();
       const description = document.getElementById("inp-description").value.trim();
       const collectionId = selectedCollectionId;
@@ -424,21 +447,41 @@ async function initPanel() {
         return;
       }
 
-      document.getElementById("btn-bookmark").disabled = true;
-      document.getElementById("btn-bookmark").innerHTML = `<div class="spinner" style="margin-bottom: 0; display: inline-block; vertical-align: middle; margin-right: 0.4rem;"></div> Saving...`;
+      btnBookmark.disabled = true;
+      btnBookmark.innerHTML = `<div class="spinner" style="margin-bottom: 0; display: inline-block; vertical-align: middle; margin-right: 0.4rem;"></div> Saving...`;
 
       try {
-        await restAddBookmark(cachedOfflineData.projectId, cachedOfflineData.idToken, cachedOfflineData.uid, {
+        const createdPostId = await restAddBookmark(cachedOfflineData.projectId, cachedOfflineData.idToken, cachedOfflineData.uid, {
           title, description, link: pageUrl, collectionId
         });
-        // Clear caches to force refetch
+        
+        // Success: Show toast notification with Undo action instead of switching pages
+        showToast("Bookmark saved successfully!", async () => {
+          showToastSpinner(true);
+          try {
+            await restRemoveBookmark(cachedOfflineData.projectId, cachedOfflineData.idToken, createdPostId);
+            // Clear cache and rebuild panel (which stays on form state because post is deleted)
+            cachedCollections = null;
+            cachedPosts = null;
+            await initPanel();
+            hideToast();
+          } catch (err) {
+            alert("Failed to undo: " + err.message);
+            showToastSpinner(false);
+          }
+        });
+
+        // Clear caches so the next check gets fresh database state
         cachedCollections = null;
         cachedPosts = null;
-        initPanel();
+
+        // Reset Save Bookmark button back to active immediately
+        btnBookmark.disabled = false;
+        btnBookmark.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px; margin-right: 0.45rem;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg> Save Bookmark`;
       } catch (err) {
         alert("Failed to save bookmark: " + err.message);
-        document.getElementById("btn-bookmark").disabled = false;
-        document.getElementById("btn-bookmark").innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px; margin-right: 0.45rem;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg> Save Bookmark`;
+        btnBookmark.disabled = false;
+        btnBookmark.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px; margin-right: 0.45rem;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg> Save Bookmark`;
       }
     };
 
@@ -594,3 +637,54 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     initPanel();
   }
 });
+
+// Toast notification handlers
+let toastTimeout = null;
+
+function showToast(message, onUndo) {
+  const container = document.getElementById("toast-container");
+  const msgEl = document.getElementById("toast-message");
+  const undoBtn = document.getElementById("btn-toast-undo");
+  
+  if (!container || !msgEl || !undoBtn) return;
+  
+  msgEl.textContent = message;
+  undoBtn.style.display = "inline-block";
+  undoBtn.innerHTML = "Undo";
+  undoBtn.disabled = false;
+  
+  undoBtn.onclick = async (e) => {
+    e.stopPropagation();
+    if (onUndo) {
+      await onUndo();
+    }
+  };
+  
+  container.classList.add("active");
+  
+  if (toastTimeout) clearTimeout(toastTimeout);
+  
+  toastTimeout = setTimeout(() => {
+    hideToast();
+  }, 5000);
+}
+
+function showToastSpinner(loading) {
+  const undoBtn = document.getElementById("btn-toast-undo");
+  if (undoBtn) {
+    if (loading) {
+      undoBtn.disabled = true;
+      undoBtn.innerHTML = `<div class="spinner" style="width:12px; height:12px; border-width:1.5px; margin-bottom: 0; display: inline-block; vertical-align: middle;"></div>`;
+    } else {
+      undoBtn.disabled = false;
+      undoBtn.innerHTML = "Undo";
+    }
+  }
+}
+
+function hideToast() {
+  const container = document.getElementById("toast-container");
+  if (container) {
+    container.classList.remove("active");
+  }
+}
