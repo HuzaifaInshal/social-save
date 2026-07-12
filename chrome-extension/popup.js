@@ -349,7 +349,7 @@ async function initPanel() {
     // Bind Unbookmark click
     document.getElementById("btn-unbookmark").onclick = async () => {
       document.getElementById("btn-unbookmark").disabled = true;
-      document.getElementById("btn-unbookmark").textContent = "Removing...";
+      document.getElementById("btn-unbookmark").innerHTML = `<div class="spinner" style="margin-bottom: 0; display: inline-block; vertical-align: middle; margin-right: 0.4rem;"></div> Removing...`;
       
       try {
         await restRemoveBookmark(cachedOfflineData.projectId, cachedOfflineData.idToken, existingBookmark.id);
@@ -360,7 +360,7 @@ async function initPanel() {
       } catch (err) {
         alert("Failed to unbookmark: " + err.message);
         document.getElementById("btn-unbookmark").disabled = false;
-        document.getElementById("btn-unbookmark").textContent = "Remove Bookmark";
+        document.getElementById("btn-unbookmark").innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px; margin-right: 0.45rem;"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg> Remove Bookmark`;
       }
     };
     
@@ -415,7 +415,7 @@ async function initPanel() {
       }
 
       document.getElementById("btn-bookmark").disabled = true;
-      document.getElementById("btn-bookmark").textContent = "Saving...";
+      document.getElementById("btn-bookmark").innerHTML = `<div class="spinner" style="margin-bottom: 0; display: inline-block; vertical-align: middle; margin-right: 0.4rem;"></div> Saving...`;
 
       try {
         await restAddBookmark(cachedOfflineData.projectId, cachedOfflineData.idToken, cachedOfflineData.uid, {
@@ -428,7 +428,7 @@ async function initPanel() {
       } catch (err) {
         alert("Failed to save bookmark: " + err.message);
         document.getElementById("btn-bookmark").disabled = false;
-        document.getElementById("btn-bookmark").textContent = "Save Bookmark";
+        document.getElementById("btn-bookmark").innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px; margin-right: 0.45rem;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg> Save Bookmark`;
       }
     };
 
@@ -450,10 +450,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const btn = document.getElementById("btn-theme-toggle");
     if (btn) {
       if (theme === "dark") {
-        btn.textContent = "☀️";
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg>`;
         btn.setAttribute("title", "Switch to Light Mode");
       } else {
-        btn.textContent = "🌙";
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 7.5A9 9 0 1 1 12 3Z" /></svg>`;
         btn.setAttribute("title", "Switch to Dark Mode");
       }
     }

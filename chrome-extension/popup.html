@@ -7,7 +7,8 @@
   <style>
     :root[data-theme="light"] {
       color-scheme: light;
-      --bg: #ffffff;
+      --bg-gradient: radial-gradient(circle at 38% 12%, rgba(124, 92, 255, 0.14), transparent 30rem),
+                     linear-gradient(135deg, #f7f8ff 0%, #eef3ff 48%, #f9fbff 100%);
       --surface: #f5f6f6;
       --surface-hover: #eeeff0;
       --border: rgba(0, 0, 0, 0.08);
@@ -26,7 +27,8 @@
 
     :root[data-theme="dark"] {
       color-scheme: dark;
-      --bg: #010102;
+      --bg-gradient: radial-gradient(circle at 38% 12%, rgba(113, 72, 214, 0.18), transparent 28rem),
+                     linear-gradient(135deg, #061022 0%, #080d1a 48%, #050915 100%);
       --surface: #0f1011;
       --surface-hover: #141516;
       --border: #23252a;
@@ -53,7 +55,7 @@
     body {
       min-width: 320px;
       width: 100%;
-      background: var(--bg);
+      background: var(--bg-gradient);
       color: var(--text);
       overflow-x: hidden;
       transition: background 0.2s ease, color 0.2s ease;
@@ -276,15 +278,20 @@
     }
 
     .btn--primary {
-      background: var(--accent);
+      background: linear-gradient(135deg, #6351f1, #955de2);
+      border: 0;
       color: white;
-      border-color: var(--accent);
+      box-shadow: 0 8px 24px rgba(112, 82, 229, 0.22);
+      font-size: 0.94rem;
+      height: 44px;
+      padding: 0;
+      font-weight: 600;
     }
 
     .btn--primary:hover {
-      background: var(--accent-hover);
-      border-color: var(--accent-hover);
-      box-shadow: 0 0 0 3px var(--accent-glow);
+      background: linear-gradient(135deg, #513eeb, #834bd7);
+      box-shadow: 0 12px 28px rgba(112, 82, 229, 0.32);
+      transform: translateY(-1px);
     }
 
     .btn--danger {
@@ -304,25 +311,39 @@
       border-color: var(--border-strong);
     }
 
-    .btn--secondary:hover {
+    .icon-button {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text-muted);
+      display: inline-grid;
+      place-items: center;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.15s, color 0.15s;
+      outline: none;
+    }
+
+    .icon-button:hover {
       background: var(--surface-hover);
       border-color: var(--border-strong);
-    }
-
-    .settings-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--text-muted);
-      font-size: 1.15rem;
-      transition: transform 0.3s ease, color 0.15s;
-      outline: none;
-      display: flex;
-      align-items: center;
-    }
-
-    .settings-btn:hover {
       color: var(--text);
+      transform: translateY(-1px);
+    }
+
+    .icon-button svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.3s ease;
+    }
+
+    #btn-settings-trigger:hover svg {
       transform: rotate(45deg);
     }
 
@@ -355,9 +376,9 @@
 
     <!-- 2. Disconnected State -->
     <div id="state-disconnected" class="state disconnected-state">
-      <div class="error-icon">🔑</div>
-      <div class="disconnected-title">Account Not Connected</div>
-      <p class="disconnected-desc">Please link your Social Save account to fetch collections and start bookmarking posts.</p>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 42px; height: 42px; color: var(--accent); margin-bottom: 0.75rem;"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+      <div class="title">Account Not Connected</div>
+      <p class="description">Please link your Social Save account to fetch collections and start bookmarking posts.</p>
       <button id="btn-open-dashboard" class="btn btn--primary">Connect Account</button>
     </div>
 
@@ -385,22 +406,28 @@
         </select>
       </div>
 
-      <button id="btn-bookmark" class="btn btn--primary">💾 Save Bookmark</button>
+      <button id="btn-bookmark" class="btn btn--primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px; margin-right: 0.45rem;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
+        Save Bookmark
+      </button>
     </div>
 
     <!-- 4. Bookmarked State (Saved Post) -->
-    <div id="state-bookmarked" class="state">
-      <div class="status-badge">
-        <span class="status-badge-icon">✓</span>
+    <div id="state-bookmarked" class="state" style="align-items: center; text-align: center;">
+      <div class="status-badge" style="margin-bottom: 0.5rem; justify-content: center; width: auto; align-self: center; display: flex; align-items: center;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; flex-shrink: 0; margin-right: 0.4rem;"><polyline points="20 6 9 17 4 12" /></svg>
         <span id="lbl-saved-message">Already Saved</span>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" style="width: 100%; text-align: left;">
         <span class="label">Bookmarked Link</span>
         <div class="info-card" id="txt-saved-url">Loading page URL...</div>
       </div>
 
-      <button id="btn-unbookmark" class="btn btn--danger">🗑 Remove Bookmark</button>
+      <button id="btn-unbookmark" class="btn btn--danger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px; margin-right: 0.45rem;"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+        Remove Bookmark
+      </button>
     </div>
 
     <!-- 5. Settings State -->
@@ -416,7 +443,10 @@
       </div>
 
       <div class="form-group" style="margin-top: 1rem;">
-        <button id="btn-logout" class="btn btn--danger">🚪 Log Out</button>
+        <button id="btn-logout" class="btn btn--danger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px; margin-right: 0.45rem;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+          Log Out
+        </button>
       </div>
 
       <button id="btn-back-settings" class="btn btn--secondary" style="margin-top: 0.5rem;">Back</button>
@@ -424,9 +454,16 @@
 
     <!-- Footer / Settings Button & Theme Toggle -->
     <div class="footer" style="margin-top: auto; padding-top: 0.75rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
-      <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <button id="btn-settings-trigger" class="settings-btn" title="Settings">⚙️</button>
-        <button id="btn-theme-toggle" class="settings-btn" title="Toggle Theme" style="font-size: 1.05rem;">🌙</button>
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <button id="btn-settings-trigger" class="icon-button" title="Settings" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+        </button>
+        <button id="btn-notifications" class="icon-button" title="Notifications" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7Z" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
+        </button>
+        <button id="btn-theme-toggle" class="icon-button" title="Toggle Theme" type="button">
+          <!-- Dynamic SVG inside -->
+        </button>
       </div>
       <span style="font-size: 0.7rem; color: var(--text-muted);">v1.0.0</span>
     </div>
