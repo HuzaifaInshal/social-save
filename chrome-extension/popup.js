@@ -224,8 +224,12 @@ async function restRemoveBookmark(projectId, idToken, postId) {
   return true;
 }
 
-// Main logic
-document.addEventListener("DOMContentLoaded", async () => {
+// Memory caches
+let cachedCollections = null;
+let cachedPosts = null;
+let cachedOfflineData = null;
+
+async function initPanel() {
   // 1. Get active page info
   let activeTab;
   try {
@@ -238,7 +242,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   if (!activeTab || !activeTab.url || activeTab.url.startsWith("chrome://")) {
-    document.getElementById("loading-message").textContent = "Unsupported page URL.";
+    document.getElementById("loading-message").textContent = "Navigate to a website to bookmark it.";
     showState("state-loading");
     updateConnectionHeader(false, "Unsupported URL");
     return;
@@ -264,32 +268,36 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  let collections = [];
-  let posts = [];
-  let offlineData = null;
-
   try {
     updateConnectionHeader(true, "Connected");
     
-    // Refresh token to get fresh idToken
-    const fresh = await refreshAuthToken(cached.firebaseConfig.apiKey, cached.refreshToken);
-    
-    // Cache the new refresh token
-    await new Promise(resolve => {
-      chrome.storage.local.set({ refreshToken: fresh.refreshToken }, resolve);
-    });
-    
-    offlineData = {
-      idToken: fresh.idToken,
-      projectId: cached.firebaseConfig.projectId,
-      uid: cached.uid
-    };
+    // Refresh token if we don't have offlineData or if we need to load initially
+    if (!cachedOfflineData) {
+      const fresh = await refreshAuthToken(cached.firebaseConfig.apiKey, cached.refreshToken);
+      
+      // Cache the new refresh token
+      await new Promise(resolve => {
+        chrome.storage.local.set({ refreshToken: fresh.refreshToken }, resolve);
+      });
+      
+      cachedOfflineData = {
+        idToken: fresh.idToken,
+        projectId: cached.firebaseConfig.projectId,
+        uid: cached.uid
+      };
+    }
 
-    collections = await restFetchCollections(offlineData.projectId, offlineData.idToken, offlineData.uid);
-    posts = await restFetchPosts(offlineData.projectId, offlineData.idToken, offlineData.uid);
+    if (!cachedCollections || !cachedPosts) {
+      cachedCollections = await restFetchCollections(cachedOfflineData.projectId, cachedOfflineData.idToken, cachedOfflineData.uid);
+      cachedPosts = await restFetchPosts(cachedOfflineData.projectId, cachedOfflineData.idToken, cachedOfflineData.uid);
+    }
   } catch (err) {
     console.error("Authentication/Fetch failed:", err);
-    // If auth error (e.g. token expired/revoked), clear storage and ask user to reconnect
+    // Reset caches on failure
+    cachedOfflineData = null;
+    cachedCollections = null;
+    cachedPosts = null;
+
     if (err.message.includes("400") || err.message.includes("refresh token")) {
       await new Promise(resolve => {
         chrome.storage.local.remove(["firebaseConfig", "refreshToken", "uid"], resolve);
@@ -299,6 +307,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     showState("state-disconnected");
     return;
   }
+
+  const collections = cachedCollections;
+  const posts = cachedPosts;
 
   // 3. Check if current page is already bookmarked
   const normalizeUrl = (u) => {
@@ -327,8 +338,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("btn-unbookmark").textContent = "Removing...";
       
       try {
-        await restRemoveBookmark(offlineData.projectId, offlineData.idToken, existingBookmark.id);
-        window.location.reload();
+        await restRemoveBookmark(cachedOfflineData.projectId, cachedOfflineData.idToken, existingBookmark.id);
+        // Clear caches to force refetch
+        cachedCollections = null;
+        cachedPosts = null;
+        initPanel();
       } catch (err) {
         alert("Failed to unbookmark: " + err.message);
         document.getElementById("btn-unbookmark").disabled = false;
@@ -344,6 +358,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Populating Collections dropdown
     const select = document.getElementById("sel-collection");
+    select.innerHTML = '<option value="">Root level (no collection)</option>';
     
     // Simple indentation helper for subfolders if they have a parentId structure
     const map = new Map(collections.map(c => [c.id, { ...c, depth: 0 }]));
@@ -389,10 +404,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("btn-bookmark").textContent = "Saving...";
 
       try {
-        await restAddBookmark(offlineData.projectId, offlineData.idToken, offlineData.uid, {
+        await restAddBookmark(cachedOfflineData.projectId, cachedOfflineData.idToken, cachedOfflineData.uid, {
           title, description, link: pageUrl, collectionId
         });
-        window.location.reload();
+        // Clear caches to force refetch
+        cachedCollections = null;
+        cachedPosts = null;
+        initPanel();
       } catch (err) {
         alert("Failed to save bookmark: " + err.message);
         document.getElementById("btn-bookmark").disabled = false;
@@ -401,5 +419,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     showState("state-form");
+  }
+}
+
+// Main DOM entry
+document.addEventListener("DOMContentLoaded", () => {
+  initPanel();
+});
+
+// Dynamic Tab Switching & Updating
+chrome.tabs.onActivated.addListener(() => {
+  initPanel();
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.url) {
+    initPanel();
   }
 });
