@@ -422,9 +422,52 @@ async function initPanel() {
   }
 }
 
+// Settings navigation state
+let activeStateBeforeSettings = "state-loading";
+
 // Main DOM entry
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   initPanel();
+
+  // Settings trigger
+  document.getElementById("btn-settings-trigger").onclick = () => {
+    const activeEl = document.querySelector(".state.active");
+    if (activeEl && activeEl.id !== "state-settings") {
+      activeStateBeforeSettings = activeEl.id;
+    }
+    showState("state-settings");
+  };
+
+  document.getElementById("btn-back-settings").onclick = () => {
+    showState(activeStateBeforeSettings);
+  };
+
+  // Load viewStyle from storage and set dropdown value
+  const config = await new Promise(resolve => {
+    chrome.storage.local.get(["viewStyle"], resolve);
+  });
+  document.getElementById("sel-view-style").value = config.viewStyle || "sidepanel";
+
+  // Bind view style changes to storage
+  document.getElementById("sel-view-style").onchange = async (e) => {
+    const value = e.target.value;
+    await new Promise(resolve => {
+      chrome.storage.local.set({ viewStyle: value }, resolve);
+    });
+  };
+
+  // Bind logout click
+  document.getElementById("btn-logout").onclick = async () => {
+    if (confirm("Are you sure you want to log out?")) {
+      await new Promise(resolve => {
+        chrome.storage.local.remove(["firebaseConfig", "refreshToken", "uid"], resolve);
+      });
+      cachedOfflineData = null;
+      cachedCollections = null;
+      cachedPosts = null;
+      window.location.reload();
+    }
+  };
 });
 
 // Dynamic Tab Switching & Updating
