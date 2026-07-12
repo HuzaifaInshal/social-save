@@ -29,3 +29,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Return true to indicate we will send response asynchronously
   return true;
 });
+
+// Relay extension connection/authorization events to background script
+window.addEventListener("SOCIAL_SAVE_CONNECT_APP", (e) => {
+  const credentials = e.detail;
+  chrome.runtime.sendMessage({ action: "SAVE_CREDENTIALS", payload: credentials }, (res) => {
+    if (res && res.success) {
+      const responseEvent = new CustomEvent("SOCIAL_SAVE_CONNECT_SUCCESS");
+      window.dispatchEvent(responseEvent);
+    }
+  });
+});

@@ -21,6 +21,17 @@ async function findWebAppTab() {
   return null;
 }
 
+async function getConnectUrl() {
+  const tab = await findWebAppTab();
+  if (tab && tab.url) {
+    try {
+      const parsed = new URL(tab.url);
+      return `${parsed.origin}/connect-extension`;
+    } catch {}
+  }
+  return "http://localhost:3000/connect-extension";
+}
+
 // Show a specific UI state
 function showState(stateId) {
   document.querySelectorAll(".state").forEach(el => el.classList.remove("active"));
@@ -236,116 +247,60 @@ document.addEventListener("DOMContentLoaded", async () => {
   const pageUrl = activeTab.url;
   const pageTitle = activeTab.title || "Untitled Post";
 
-  // Bind Open Dashboard CTA
-  document.getElementById("btn-open-dashboard").onclick = () => {
-    chrome.tabs.create({ url: "http://localhost:3000" });
+  // Bind Connect/Open Dashboard CTA
+  document.getElementById("btn-open-dashboard").onclick = async () => {
+    const url = await getConnectUrl();
+    chrome.tabs.create({ url });
   };
 
-  // 2. Try to connect to Social Save web app tab
-  let isOfflineMode = false;
-  let offlineData = null;
+  // 2. Load cached credentials and configuration
+  const cached = await new Promise(resolve => {
+    chrome.storage.local.get(["firebaseConfig", "refreshToken", "uid"], resolve);
+  });
+
+  if (!cached || !cached.firebaseConfig || !cached.refreshToken || !cached.uid) {
+    updateConnectionHeader(false, "Not Connected");
+    showState("state-disconnected");
+    return;
+  }
+
   let collections = [];
   let posts = [];
+  let offlineData = null;
 
-  const webAppTab = await findWebAppTab();
-  
-  if (webAppTab) {
-    // Ping the content script
-    let isConnected = false;
-    try {
-      const response = await new Promise((resolve, reject) => {
-        chrome.tabs.sendMessage(webAppTab.id, { action: "PING" }, (res) => {
-          if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-          else resolve(res);
-        });
-      });
-      isConnected = response && response.status === "CONNECTED";
-    } catch (err) {
-      console.warn("Ping failed, bridge not ready.", err);
-    }
-
-    if (isConnected) {
-      updateConnectionHeader(true, "Connected");
-
-      // Retrieve auth state, collections, and existing bookmarks
-      let appState;
-      try {
-        appState = await new Promise((resolve, reject) => {
-          chrome.tabs.sendMessage(webAppTab.id, { action: "GET_STATUS" }, (res) => {
-            if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-            else resolve(res);
-          });
-        });
-      } catch (err) {
-        console.error("Error getting state:", err);
-      }
-
-      if (appState && appState.authenticated) {
-        // Cache the credentials and config
-        await new Promise(resolve => {
-          chrome.storage.local.set({
-            firebaseConfig: appState.firebaseConfig,
-            refreshToken: appState.refreshToken,
-            uid: appState.uid
-          }, resolve);
-        });
-
-        collections = appState.collections;
-        posts = appState.posts;
-      } else {
-        // Web tab is open but not authenticated
-        updateConnectionHeader(false, "Authentication Required");
-        document.getElementById("loading-message").textContent = "Please sign in to the web app first.";
-        showState("state-loading");
-        return;
-      }
-    } else {
-      isOfflineMode = true;
-    }
-  } else {
-    isOfflineMode = true;
-  }
-
-  // 3. If offline/no-tab mode, load credentials from cache and use REST API
-  if (isOfflineMode) {
-    const cached = await new Promise(resolve => {
-      chrome.storage.local.get(["firebaseConfig", "refreshToken", "uid"], resolve);
+  try {
+    updateConnectionHeader(true, "Connected");
+    
+    // Refresh token to get fresh idToken
+    const fresh = await refreshAuthToken(cached.firebaseConfig.apiKey, cached.refreshToken);
+    
+    // Cache the new refresh token
+    await new Promise(resolve => {
+      chrome.storage.local.set({ refreshToken: fresh.refreshToken }, resolve);
     });
+    
+    offlineData = {
+      idToken: fresh.idToken,
+      projectId: cached.firebaseConfig.projectId,
+      uid: cached.uid
+    };
 
-    if (cached && cached.firebaseConfig && cached.refreshToken && cached.uid) {
-      try {
-        updateConnectionHeader(true, "Connected (Cached)");
-        
-        // Refresh token to get fresh idToken
-        const fresh = await refreshAuthToken(cached.firebaseConfig.apiKey, cached.refreshToken);
-        
-        // Save the new refresh token
-        await new Promise(resolve => {
-          chrome.storage.local.set({ refreshToken: fresh.refreshToken }, resolve);
-        });
-        
-        offlineData = {
-          idToken: fresh.idToken,
-          projectId: cached.firebaseConfig.projectId,
-          uid: cached.uid
-        };
-
-        collections = await restFetchCollections(offlineData.projectId, offlineData.idToken, offlineData.uid);
-        posts = await restFetchPosts(offlineData.projectId, offlineData.idToken, offlineData.uid);
-      } catch (err) {
-        console.error("Failed to connect via cached token:", err);
-        updateConnectionHeader(false, "Connection Failed");
-        showState("state-disconnected");
-        return;
-      }
-    } else {
-      updateConnectionHeader(false, "Disconnected");
-      showState("state-disconnected");
-      return;
+    collections = await restFetchCollections(offlineData.projectId, offlineData.idToken, offlineData.uid);
+    posts = await restFetchPosts(offlineData.projectId, offlineData.idToken, offlineData.uid);
+  } catch (err) {
+    console.error("Authentication/Fetch failed:", err);
+    // If auth error (e.g. token expired/revoked), clear storage and ask user to reconnect
+    if (err.message.includes("400") || err.message.includes("refresh token")) {
+      await new Promise(resolve => {
+        chrome.storage.local.remove(["firebaseConfig", "refreshToken", "uid"], resolve);
+      });
     }
+    updateConnectionHeader(false, "Connection Error");
+    showState("state-disconnected");
+    return;
   }
 
-  // 4. Check if current page is already bookmarked
+  // 3. Check if current page is already bookmarked
   const normalizeUrl = (u) => {
     try {
       const parsed = new URL(u);
@@ -372,22 +327,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("btn-unbookmark").textContent = "Removing...";
       
       try {
-        if (isOfflineMode) {
-          await restRemoveBookmark(offlineData.projectId, offlineData.idToken, existingBookmark.id);
-        } else {
-          const res = await new Promise((resolve, reject) => {
-            chrome.tabs.sendMessage(webAppTab.id, {
-              action: "REMOVE_BOOKMARK",
-              payload: { link: existingBookmark.link }
-            }, (response) => {
-              if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-              else resolve(response);
-            });
-          });
-          if (!res || !res.success) {
-            throw new Error(res?.error || "Unknown error");
-          }
-        }
+        await restRemoveBookmark(offlineData.projectId, offlineData.idToken, existingBookmark.id);
         window.location.reload();
       } catch (err) {
         alert("Failed to unbookmark: " + err.message);
@@ -449,24 +389,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("btn-bookmark").textContent = "Saving...";
 
       try {
-        if (isOfflineMode) {
-          await restAddBookmark(offlineData.projectId, offlineData.idToken, offlineData.uid, {
-            title, description, link: pageUrl, collectionId
-          });
-        } else {
-          const res = await new Promise((resolve, reject) => {
-            chrome.tabs.sendMessage(webAppTab.id, {
-              action: "ADD_BOOKMARK",
-              payload: { title, description, link: pageUrl, collectionId }
-            }, (response) => {
-              if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-              else resolve(response);
-            });
-          });
-          if (!res || !res.success) {
-            throw new Error(res?.error || "Unknown error");
-          }
-        }
+        await restAddBookmark(offlineData.projectId, offlineData.idToken, offlineData.uid, {
+          title, description, link: pageUrl, collectionId
+        });
         window.location.reload();
       } catch (err) {
         alert("Failed to save bookmark: " + err.message);
