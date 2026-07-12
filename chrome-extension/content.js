@@ -9,12 +9,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  // Relay the request to the Next.js page
-  const requestEvent = new CustomEvent("SOCIAL_SAVE_EXT_REQUEST", {
-    detail: { action: message.action, payload: message.payload }
-  });
-  window.dispatchEvent(requestEvent);
-
   // Define response handler
   const handleResponse = (e) => {
     if (e.detail.action === message.action) {
@@ -25,6 +19,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   // Listen for the response from the page
   window.addEventListener("SOCIAL_SAVE_EXT_RESPONSE", handleResponse);
+
+  // Relay the request to the Next.js page
+  const requestEvent = new CustomEvent("SOCIAL_SAVE_EXT_REQUEST", {
+    detail: { action: message.action, payload: message.payload }
+  });
+  window.dispatchEvent(requestEvent);
 
   // Return true to indicate we will send response asynchronously
   return true;
