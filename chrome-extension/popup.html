@@ -211,19 +211,82 @@
       box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
-    select.input-control {
-      appearance: none;
-      -webkit-appearance: none;
-      background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b6b6b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
-      background-position: right 0.75rem center;
-      background-repeat: no-repeat;
-      background-size: 1.25rem;
-      padding-right: 2.5rem;
-      cursor: pointer;
+    .custom-select {
+      position: relative;
+      width: 100%;
+      user-select: none;
     }
 
-    :root[data-theme="dark"] select.input-control {
-      background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%238a8f98' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+    .custom-select__trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .custom-select__trigger:focus,
+    .custom-select.active .custom-select__trigger {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+      outline: none;
+    }
+
+    .custom-select__icon {
+      color: var(--text-muted);
+      transition: transform 0.15s ease;
+      flex-shrink: 0;
+      margin-left: 0.5rem;
+    }
+
+    .custom-select.active .custom-select__icon {
+      transform: rotate(180deg);
+    }
+
+    .custom-select__options {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      z-index: 1000;
+      max-height: 180px;
+      overflow-y: auto;
+      display: none;
+      padding: 4px 0;
+    }
+
+    .custom-select.active .custom-select__options {
+      display: block;
+    }
+
+    .custom-select__option {
+      padding: 0.55rem 0.9rem;
+      font-size: 0.92rem;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.1s, color 0.1s;
+    }
+
+    .custom-select__option:hover {
+      background: var(--accent-glow);
+      color: var(--accent-hover);
+    }
+
+    .custom-select__option.selected {
+      background: var(--accent-glow);
+      color: var(--accent-hover);
+      font-weight: 500;
     }
 
     .input-control--area {
@@ -400,10 +463,16 @@
       </div>
 
       <div class="form-group">
-        <label class="label" for="sel-collection">Save to Collection</label>
-        <select id="sel-collection" class="input-control">
-          <option value="">Root level (no collection)</option>
-        </select>
+        <label class="label">Save to Collection</label>
+        <div class="custom-select" id="select-collection">
+          <div class="custom-select__trigger" tabindex="0">
+            <span class="custom-select__value">Root level (no collection)</span>
+            <svg class="custom-select__icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <div class="custom-select__options"></div>
+        </div>
       </div>
 
       <button id="btn-bookmark" class="btn btn--primary">
@@ -435,11 +504,19 @@
       <h2 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 0.5rem; text-align: center;">Extension Settings</h2>
       
       <div class="form-group">
-        <label class="label" for="sel-view-style">Extension View Style</label>
-        <select id="sel-view-style" class="input-control">
-          <option value="sidepanel">Side Panel (Default)</option>
-          <option value="popup">Popup</option>
-        </select>
+        <label class="label">Extension View Style</label>
+        <div class="custom-select" id="select-view-style">
+          <div class="custom-select__trigger" tabindex="0">
+            <span class="custom-select__value">Side Panel (Default)</span>
+            <svg class="custom-select__icon" width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <div class="custom-select__options">
+            <div class="custom-select__option selected" data-value="sidepanel">Side Panel (Default)</div>
+            <div class="custom-select__option" data-value="popup">Popup</div>
+          </div>
+        </div>
       </div>
 
       <div class="form-group" style="margin-top: 1rem;">

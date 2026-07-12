@@ -14,6 +14,11 @@
   document.documentElement.setAttribute("data-theme", theme);
 })();
 
+// Custom Select Component References
+let selectedCollectionId = null;
+let collectionSelect = null;
+let viewStyleSelect = null;
+
 const webAppPatterns = [
   "*://localhost/*",
   "*://127.0.0.1/*",
@@ -370,9 +375,10 @@ async function initPanel() {
     document.getElementById("txt-page-url").textContent = pageUrl;
     document.getElementById("inp-title").value = pageTitle;
 
-    // Populating Collections dropdown
-    const select = document.getElementById("sel-collection");
-    select.innerHTML = '<option value="">Root level (no collection)</option>';
+    // Populating Collections custom dropdown
+    const options = [
+      { value: "", label: "Root level (no collection)" }
+    ];
     
     // Simple indentation helper for subfolders if they have a parentId structure
     const map = new Map(collections.map(c => [c.id, { ...c, depth: 0 }]));
@@ -397,17 +403,21 @@ async function initPanel() {
     const sortedCollections = Array.from(map.values()).sort((a, b) => a.title.localeCompare(b.title));
     
     sortedCollections.forEach(c => {
-      const option = document.createElement("option");
-      option.value = c.id;
-      option.textContent = "\u00A0\u00A0".repeat(c.depth) + (c.depth > 0 ? "↳ " : "") + c.title;
-      select.appendChild(option);
+      const indent = "\u00A0\u00A0".repeat(c.depth) + (c.depth > 0 ? "↳ " : "");
+      options.push({ value: c.id, label: indent + c.title });
     });
+
+    if (collectionSelect) {
+      collectionSelect.updateOptions(options);
+      collectionSelect.setValue("");
+    }
+    selectedCollectionId = null;
 
     // Bind Bookmark click
     document.getElementById("btn-bookmark").onclick = async () => {
       const title = document.getElementById("inp-title").value.trim();
       const description = document.getElementById("inp-description").value.trim();
-      const collectionId = document.getElementById("sel-collection").value || null;
+      const collectionId = selectedCollectionId;
 
       if (!title) {
         alert("Please enter a title.");
@@ -483,19 +493,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     showState(activeStateBeforeSettings);
   };
 
-  // Load viewStyle from storage and set dropdown value
+  // Initialize custom select components
+  collectionSelect = setupCustomSelect("select-collection", (val) => {
+    selectedCollectionId = val || null;
+  });
+  
+  viewStyleSelect = setupCustomSelect("select-view-style", async (val) => {
+    await new Promise(resolve => {
+      chrome.storage.local.set({ viewStyle: val }, resolve);
+    });
+  });
+
+  // Load viewStyle from storage and set custom select value
   const config = await new Promise(resolve => {
     chrome.storage.local.get(["viewStyle"], resolve);
   });
-  document.getElementById("sel-view-style").value = config.viewStyle || "sidepanel";
-
-  // Bind view style changes to storage
-  document.getElementById("sel-view-style").onchange = async (e) => {
-    const value = e.target.value;
-    await new Promise(resolve => {
-      chrome.storage.local.set({ viewStyle: value }, resolve);
-    });
-  };
+  viewStyleSelect.setValue(config.viewStyle || "sidepanel");
 
   // Bind logout click
   document.getElementById("btn-logout").onclick = async () => {
@@ -510,6 +523,66 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 });
+
+// Global outside-click listener to close custom dropdowns
+document.addEventListener("click", () => {
+  document.querySelectorAll(".custom-select").forEach(el => el.classList.remove("active"));
+});
+
+// Custom Select Component Helper
+function setupCustomSelect(containerId, onChange) {
+  const container = document.getElementById(containerId);
+  if (!container) return null;
+  
+  const trigger = container.querySelector(".custom-select__trigger");
+  const optionsContainer = container.querySelector(".custom-select__options");
+  const valueSpan = container.querySelector(".custom-select__value");
+  
+  trigger.onclick = (e) => {
+    e.stopPropagation();
+    // Close other custom selects
+    document.querySelectorAll(".custom-select").forEach(el => {
+      if (el !== container) el.classList.remove("active");
+    });
+    container.classList.toggle("active");
+  };
+  
+  function bindOptions() {
+    container.querySelectorAll(".custom-select__option").forEach(opt => {
+      opt.onclick = () => {
+        const val = opt.getAttribute("data-value") || "";
+        const label = opt.textContent.trim();
+        
+        valueSpan.textContent = label;
+        
+        container.querySelectorAll(".custom-select__option").forEach(o => o.classList.remove("selected"));
+        opt.classList.add("selected");
+        
+        container.classList.remove("active");
+        if (onChange) onChange(val);
+      };
+    });
+  }
+  
+  bindOptions();
+  
+  return {
+    setValue: (val) => {
+      const opt = container.querySelector(`.custom-select__option[data-value="${val}"]`);
+      if (opt) {
+        valueSpan.textContent = opt.textContent.trim();
+        container.querySelectorAll(".custom-select__option").forEach(o => o.classList.remove("selected"));
+        opt.classList.add("selected");
+      }
+    },
+    updateOptions: (newOptions) => {
+      optionsContainer.innerHTML = newOptions.map(opt => `
+        <div class="custom-select__option" data-value="${opt.value}">${opt.label}</div>
+      `).join("");
+      bindOptions();
+    }
+  };
+}
 
 // Dynamic Tab Switching & Updating
 chrome.tabs.onActivated.addListener(() => {
