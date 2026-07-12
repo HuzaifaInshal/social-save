@@ -1,5 +1,19 @@
 // Social Save extension popup controller
 
+// Immediately load and apply theme to prevent flashing
+(async () => {
+  const result = await new Promise(resolve => {
+    chrome.storage.local.get(["theme"], resolve);
+  });
+  let theme = "light";
+  if (result && result.theme) {
+    theme = result.theme;
+  } else {
+    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  document.documentElement.setAttribute("data-theme", theme);
+})();
+
 const webAppPatterns = [
   "*://localhost/*",
   "*://127.0.0.1/*",
@@ -428,6 +442,33 @@ let activeStateBeforeSettings = "state-loading";
 // Main DOM entry
 document.addEventListener("DOMContentLoaded", async () => {
   initPanel();
+
+  // Setup theme button state and listener
+  let currentTheme = document.documentElement.getAttribute("data-theme") || "light";
+  
+  function updateThemeUI(theme) {
+    const btn = document.getElementById("btn-theme-toggle");
+    if (btn) {
+      if (theme === "dark") {
+        btn.textContent = "☀️";
+        btn.setAttribute("title", "Switch to Light Mode");
+      } else {
+        btn.textContent = "🌙";
+        btn.setAttribute("title", "Switch to Dark Mode");
+      }
+    }
+  }
+
+  updateThemeUI(currentTheme);
+
+  document.getElementById("btn-theme-toggle").onclick = async () => {
+    currentTheme = currentTheme === "light" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", currentTheme);
+    await new Promise(resolve => {
+      chrome.storage.local.set({ theme: currentTheme }, resolve);
+    });
+    updateThemeUI(currentTheme);
+  };
 
   // Settings trigger
   document.getElementById("btn-settings-trigger").onclick = () => {

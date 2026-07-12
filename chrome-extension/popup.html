@@ -5,40 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Social Save Bookmarker</title>
   <style>
-    :root {
-      /* Default to Light Mode values matching the web app */
+    :root[data-theme="light"] {
       color-scheme: light;
       --bg: #ffffff;
       --surface: #f5f6f6;
       --surface-hover: #eeeff0;
       --border: rgba(0, 0, 0, 0.08);
-      --accent: #5e6ad2;
-      --accent-hover: #4a56c4;
+      --border-strong: rgba(0, 0, 0, 0.14);
       --text: #000000;
       --text-muted: #6b6b6b;
+      --accent: #5e6ad2;
+      --accent-hover: #4a56c4;
+      --accent-glow: rgba(94, 106, 210, 0.1);
       --success: #27a644;
       --danger: #dc2626;
       --danger-hover: #b91c1c;
       --shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+      --radius: 8px;
     }
 
-    @media (prefers-color-scheme: dark) {
-      :root {
-        /* Dark Mode values matching the web app */
-        color-scheme: dark;
-        --bg: #010102;
-        --surface: #0f1011;
-        --surface-hover: #141516;
-        --border: #23252a;
-        --accent: #5e6ad2;
-        --accent-hover: #828fff;
-        --text: #f7f8f8;
-        --text-muted: #8a8f98;
-        --success: #27a644;
-        --danger: #f87171;
-        --danger-hover: #ef4444;
-        --shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
-      }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #010102;
+      --surface: #0f1011;
+      --surface-hover: #141516;
+      --border: #23252a;
+      --border-strong: #34343a;
+      --text: #f7f8f8;
+      --text-muted: #8a8f98;
+      --accent: #5e6ad2;
+      --accent-hover: #828fff;
+      --accent-glow: rgba(94, 106, 210, 0.22);
+      --success: #27a644;
+      --danger: #f87171;
+      --danger-hover: #ef4444;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+      --radius: 8px;
     }
 
     * {
@@ -54,13 +56,14 @@
       background: var(--bg);
       color: var(--text);
       overflow-x: hidden;
+      transition: background 0.2s ease, color 0.2s ease;
     }
 
     .container {
       padding: 1.25rem;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 1.15rem;
       min-height: 380px;
     }
 
@@ -83,13 +86,15 @@
     }
 
     .brand-icon {
-      width: 22px;
-      height: 22px;
-      background: var(--accent);
+      width: 24px;
+      height: 24px;
       border-radius: 6px;
+      background: linear-gradient(135deg, #4d5cff, #9b5eea);
+      box-shadow: 0 4px 12px rgba(117, 84, 237, 0.25);
       display: grid;
       place-items: center;
       color: white;
+      flex-shrink: 0;
     }
 
     .connection-status {
@@ -133,13 +138,14 @@
     }
 
     .spinner {
-      width: 28px;
-      height: 28px;
-      border: 3px solid rgba(94, 106, 210, 0.2);
-      border-top-color: var(--accent);
+      width: 20px;
+      height: 20px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      animation: spin 0.6s linear infinite;
       margin-bottom: 1rem;
+      opacity: 0.7;
     }
 
     @keyframes spin {
@@ -148,88 +154,83 @@
 
     /* Disconnected State */
     .disconnected-state {
-      align-items: center;
       text-align: center;
       padding: 1.5rem 0.5rem;
-      gap: 1.25rem;
+      align-items: center;
     }
 
-    .error-icon {
+    .warning-icon {
       font-size: 2.5rem;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
     }
 
-    .disconnected-title {
-      font-size: 1.05rem;
-      font-weight: 600;
+    .title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
       color: var(--text);
     }
 
-    .disconnected-desc {
-      font-size: 0.85rem;
+    .description {
+      font-size: 0.88rem;
       color: var(--text-muted);
-      line-height: 1.4;
-      max-width: 280px;
+      margin-bottom: 1.5rem;
+      line-height: 1.45;
     }
 
-    /* Form Fields */
+    /* Form Elements */
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
+      gap: 0.45rem;
     }
 
     .label {
-      font-size: 0.78rem;
-      font-weight: 600;
+      font-size: 0.85rem;
+      font-weight: 500;
       color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
     }
 
     .input-control {
       width: 100%;
+      padding: 0.65rem 0.9rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-strong);
       background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
       color: var(--text);
-      padding: 0.65rem 0.85rem;
-      font-size: 0.88rem;
+      font-size: 0.92rem;
+      transition: border-color 0.15s, box-shadow 0.15s;
       outline: none;
-      transition: all 0.15s;
     }
 
     .input-control:focus {
-      border-color: #818cf8;
-      box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
-    .input-control::placeholder {
-      color: var(--text-muted);
-      opacity: 0.5;
+    .input-control--area {
+      resize: vertical;
+      min-height: 90px;
     }
 
-    /* Badges */
     .info-card {
-      background: rgba(16, 24, 39, 0.6);
-      border: 1px dashed var(--border);
-      border-radius: 8px;
-      padding: 0.6rem 0.8rem;
-      font-size: 0.8rem;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      padding: 0.65rem 0.9rem;
+      font-size: 0.88rem;
       color: var(--text-muted);
       word-break: break-all;
-      line-height: 1.3;
-    }
-
-    .info-card strong {
-      color: var(--text);
+      line-height: 1.4;
     }
 
     .status-badge {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      background: rgba(16, 185, 129, 0.08);
-      border: 1px solid rgba(16, 185, 129, 0.25);
+      background: rgba(39, 166, 68, 0.08);
+      border: 1px solid rgba(39, 166, 68, 0.2);
       color: var(--success);
       padding: 0.65rem 0.85rem;
       border-radius: 8px;
@@ -237,65 +238,60 @@
       font-weight: 500;
     }
 
-    .status-badge-icon {
-      font-size: 1.1rem;
-    }
-
     /* Buttons */
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
       width: 100%;
-      padding: 0.72rem 1rem;
-      border-radius: 8px;
-      border: none;
+      padding: 0.65rem 1.1rem;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
       font-size: 0.9rem;
-      font-weight: 600;
-      color: white;
-      cursor: pointer;
+      font-weight: 500;
+      line-height: 1;
       transition: all 0.15s ease;
+      cursor: pointer;
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
     .btn--primary {
       background: var(--accent);
+      color: white;
+      border-color: var(--accent);
     }
 
     .btn--primary:hover {
       background: var(--accent-hover);
-      transform: translateY(-1px);
+      border-color: var(--accent-hover);
+      box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
     .btn--danger {
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.25);
+      background: rgba(248, 113, 113, 0.1);
       color: var(--danger);
+      border-color: rgba(248, 113, 113, 0.2);
     }
 
     .btn--danger:hover {
-      background: rgba(239, 68, 68, 0.2);
-      border-color: rgba(239, 68, 68, 0.35);
-      transform: translateY(-1px);
+      background: rgba(248, 113, 113, 0.18);
+      border-color: rgba(248, 113, 113, 0.3);
     }
 
     .btn--secondary {
-      background: rgba(148, 163, 184, 0.08);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      width: 100%;
-      padding: 0.72rem 1rem;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s ease;
+      background: var(--surface-hover);
+      color: var(--text);
+      border-color: var(--border-strong);
     }
 
     .btn--secondary:hover {
-      background: rgba(148, 163, 184, 0.15);
-      color: var(--text);
-      transform: translateY(-1px);
+      background: var(--surface-hover);
+      border-color: var(--border-strong);
     }
 
     .settings-btn {
@@ -411,9 +407,12 @@
       <button id="btn-back-settings" class="btn btn--secondary" style="margin-top: 0.5rem;">Back</button>
     </div>
 
-    <!-- Footer / Settings Button -->
+    <!-- Footer / Settings Button & Theme Toggle -->
     <div class="footer" style="margin-top: auto; padding-top: 0.75rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
-      <button id="btn-settings-trigger" class="settings-btn" title="Settings">⚙️</button>
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <button id="btn-settings-trigger" class="settings-btn" title="Settings">⚙️</button>
+        <button id="btn-theme-toggle" class="settings-btn" title="Toggle Theme" style="font-size: 1.05rem;">🌙</button>
+      </div>
       <span style="font-size: 0.7rem; color: var(--text-muted);">v1.0.0</span>
     </div>
   </div>
