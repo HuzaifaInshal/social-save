@@ -20,6 +20,7 @@ export type PostItem = {
   description: string;
   link: string;
   platform: PostPlatform;
+  rating?: number;
   createdAt: number;
   updatedAt: number;
 };
@@ -40,4 +41,6 @@ export type CollectionFormValues = Pick<CollectionItem, "title" | "description">
 
 export type PostFormValues = Pick<PostItem, "title" | "description" | "link"> & {
   collectionId: string | null;
+  rating?: number;
 };
+

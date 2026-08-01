@@ -63,6 +63,7 @@ export async function createPost(ownerId: string, values: PostFormValues) {
     title: values.title,
     description: values.description,
     link: values.link,
+    rating: values.rating ?? 0,
     platform: getPlatformFromLink(values.link),
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -75,10 +76,19 @@ export async function updatePost(postId: string, values: PostFormValues) {
     doc(getFirebaseDb(), POSTS, postId),
     withTimestamps({
       ...values,
+      rating: values.rating ?? 0,
       platform: getPlatformFromLink(values.link),
     }),
   );
 }
+
+export async function updatePostRating(postId: string, rating: number) {
+  return updateDoc(
+    doc(getFirebaseDb(), POSTS, postId),
+    withTimestamps({ rating }),
+  );
+}
+
 
 export async function bulkCreateLinks(ownerId: string, collectionId: string | null, rawText: string) {
   const links = rawText.split("\n").map((l) => l.trim()).filter(Boolean);

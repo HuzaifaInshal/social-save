@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Modal } from "@/components/modals/modal";
 import { Button } from "@/components/ui/button";
 import { FieldWrapper, SelectInput, TextArea, TextInput } from "@/components/ui/field";
+import { StarRating } from "@/components/ui/star-rating";
 import { CollectionItem, PostFormValues } from "@/types";
 
 type PostFormModalProps = {
@@ -48,6 +49,15 @@ export function PostFormModal({
             onChange={(event) => setValues((current) => ({ ...current, title: event.target.value }))}
           />
         </FieldWrapper>
+        <FieldWrapper label="Rating">
+          <div style={{ paddingTop: "0.25rem", paddingBottom: "0.25rem" }}>
+            <StarRating
+              value={values.rating ?? 0}
+              onChange={(rating) => setValues((current) => ({ ...current, rating }))}
+              size="lg"
+            />
+          </div>
+        </FieldWrapper>
         <FieldWrapper label="Description">
           <TextArea
             rows={4}
@@ -77,3 +87,4 @@ export function PostFormModal({
     </Modal>
   );
 }
+

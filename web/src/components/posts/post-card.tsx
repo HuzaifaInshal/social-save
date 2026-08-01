@@ -3,6 +3,7 @@
 import { platformLabels } from "@/lib/constants";
 import { PostItem } from "@/types";
 import { cn } from "@/lib/utils";
+import { StarRating } from "@/components/ui/star-rating";
 
 const platformEmoji: Record<string, string> = {
   instagram: "📸",
@@ -18,9 +19,10 @@ type PostCardProps = {
   onToggleSelect: (id: string) => void;
   onEdit: (post: PostItem) => void;
   onDelete: (post: PostItem) => void;
+  onRate?: (post: PostItem, rating: number) => void;
 };
 
-export function PostCard({ post, checked, onToggleSelect, onEdit, onDelete }: PostCardProps) {
+export function PostCard({ post, checked, onToggleSelect, onEdit, onDelete, onRate }: PostCardProps) {
   const host = safeHost(post.link);
 
   return (
@@ -41,12 +43,20 @@ export function PostCard({ post, checked, onToggleSelect, onEdit, onDelete }: Po
       </div>
 
       <div className="post-card__body">
-        <span className="post-card__platform-badge">{platformLabels[post.platform]}</span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+          <span className="post-card__platform-badge">{platformLabels[post.platform]}</span>
+          <StarRating
+            value={post.rating ?? 0}
+            size="sm"
+            onChange={(rating) => onRate?.(post, rating)}
+          />
+        </div>
         <p className="post-card__title">{post.title}</p>
         {post.description && (
           <p className="post-card__desc">{post.description}</p>
         )}
       </div>
+
 
       <div className="post-card__footer">
         <span className="post-card__host">{host}</span>

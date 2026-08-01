@@ -10,14 +10,17 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { PostCard } from "@/components/posts/post-card";
 import { PostEmbed } from "@/components/posts/post-embed";
 import { Button } from "@/components/ui/button";
+import { StarRating } from "@/components/ui/star-rating";
 import { useToast } from "@/components/ui/toast";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { updatePostRating } from "@/lib/firebase/firestore";
 import { cn } from "@/lib/utils";
-import { SelectionState } from "@/types";
+import { PostItem, SelectionState } from "@/types";
 
 const emptySelection: SelectionState = { collectionIds: [], postIds: [] };
 type DashboardTab = "info" | "collections" | "posts";
 type ViewMode = "grid" | "single";
+type SortOption = "newest" | "rating-desc" | "rating-asc";
 
 export function DashboardShell() {
   const { user, loading, isConfigured, signOut } = useAuth();
@@ -31,6 +34,7 @@ export function DashboardShell() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [activePostIndex, setActivePostIndex] = useState(0);
   const [query, setQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [copiedPostId, setCopiedPostId] = useState<string | null>(null);
 
   const handleCopyLink = (link: string, postId: string) => {
@@ -40,6 +44,15 @@ export function DashboardShell() {
       setCopiedPostId((currentId) => (currentId === postId ? null : currentId));
     }, 2000);
   };
+
+  const handleRatePost = async (post: PostItem, newRating: number) => {
+    try {
+      await updatePostRating(post.id, newRating);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : "Failed to update post rating.");
+    }
+  };
+
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -69,11 +82,25 @@ export function DashboardShell() {
     );
   }, [normalizedQuery, visibleCollections]);
   const filteredPosts = useMemo(() => {
-    if (!normalizedQuery) return visiblePosts;
-    return visiblePosts.filter((post) =>
-      `${post.title} ${post.description} ${post.link} ${post.platform}`.toLowerCase().includes(normalizedQuery),
-    );
-  }, [normalizedQuery, visiblePosts]);
+    let result = visiblePosts;
+    if (normalizedQuery) {
+      result = visiblePosts.filter((post) => {
+        const textMatch = `${post.title} ${post.description} ${post.link} ${post.platform}`.toLowerCase().includes(normalizedQuery);
+        const ratingMatch = post.rating ? `${post.rating} star`.includes(normalizedQuery) || `${post.rating}star`.includes(normalizedQuery) : false;
+        return textMatch || ratingMatch;
+      });
+    }
+    return [...result].sort((a, b) => {
+      if (sortBy === "rating-desc") {
+        return (b.rating ?? 0) - (a.rating ?? 0);
+      }
+      if (sortBy === "rating-asc") {
+        return (a.rating ?? 0) - (b.rating ?? 0);
+      }
+      return b.createdAt - a.createdAt;
+    });
+  }, [normalizedQuery, visiblePosts, sortBy]);
+
 
   const resetModal = () => setModal(null);
   const resetSelection = () => setSelection(emptySelection);
@@ -248,7 +275,19 @@ export function DashboardShell() {
               </button>
             </div>
             <div className="dashboard-view-actions">
-              <button className="sort-button" type="button">Sort by <strong>Newest</strong><span aria-hidden="true">⌄</span></button>
+              <button
+                className="sort-button"
+                type="button"
+                onClick={() => {
+                  setSortBy((prev) =>
+                    prev === "newest" ? "rating-desc" : prev === "rating-desc" ? "rating-asc" : "newest"
+                  );
+                }}
+                title="Click to toggle sorting"
+              >
+                Sort by <strong>{sortBy === "newest" ? "Newest" : sortBy === "rating-desc" ? "Rating (High → Low)" : "Rating (Low → High)"}</strong>
+                <span aria-hidden="true"> ⌄</span>
+              </button>
               <button
                 className={cn("view-button", viewMode === "grid" && "view-button--active")}
                 type="button"
@@ -382,6 +421,7 @@ export function DashboardShell() {
                       onToggleSelect={(id) => toggleSelected("postIds", id)}
                       onEdit={(item) => setModal({ type: "editPost", post: item })}
                       onDelete={(item) => setModal({ type: "deletePosts", postIds: [item.id] })}
+                      onRate={(item, rating) => void handleRatePost(item, rating)}
                     />
                   ))}
                 </div>
@@ -394,6 +434,16 @@ export function DashboardShell() {
                       <div className="post-single-header">
                         <div className="post-single-header__meta">
                           <h3 className="post-single-title">{post.title}</h3>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", margin: "0.35rem 0 0.5rem 0" }}>
+                            <StarRating
+                              value={post.rating ?? 0}
+                              size="md"
+                              onChange={(rating) => void handleRatePost(post, rating)}
+                            />
+                            <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>
+                              {post.rating ? `${post.rating} / 5 stars` : "Unrated"}
+                            </span>
+                          </div>
                           {post.description && <p className="post-single-desc">{post.description}</p>}
                           <div style={{ display: "inline-flex", alignItems: "center" }}>
                             <a href={post.link} target="_blank" rel="noreferrer" className="post-single-link">
@@ -431,6 +481,7 @@ export function DashboardShell() {
                         <PostEmbed post={post} />
                       </div>
                     </div>
+
                     <div className="post-single-nav">
                       <button
                         className="nav-btn"
