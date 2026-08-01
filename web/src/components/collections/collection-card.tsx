@@ -36,6 +36,17 @@ export function CollectionCard({ collection, checked, onOpen, onToggleSelect, on
         {collection.description || "No description yet."}
       </p>
 
+      {collection.tags && collection.tags.length > 0 && (
+        <div className="card-tags-list">
+          {collection.tags.map((tag) => (
+            <span key={tag} className="card-tag-pill">
+              #{tag}
+            </span>
+          ))}
+        </div>
+      )}
+
+
       <div className="collection-card__footer">
         <span className="collection-card__meta">Collection</span>
         <div className="collection-card__actions">

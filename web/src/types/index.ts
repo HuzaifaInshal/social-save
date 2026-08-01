@@ -6,6 +6,7 @@ export type CollectionItem = {
   title: string;
   description: string;
   parentId: string | null;
+  tags?: string[];
   createdAt: number;
   updatedAt: number;
 };
@@ -21,6 +22,7 @@ export type PostItem = {
   link: string;
   platform: PostPlatform;
   rating?: number;
+  tags?: string[];
   createdAt: number;
   updatedAt: number;
 };
@@ -37,10 +39,13 @@ export type SelectionState = {
 
 export type CollectionFormValues = Pick<CollectionItem, "title" | "description"> & {
   parentId: string | null;
+  tags?: string[];
 };
 
 export type PostFormValues = Pick<PostItem, "title" | "description" | "link"> & {
   collectionId: string | null;
   rating?: number;
+  tags?: string[];
 };
+
 

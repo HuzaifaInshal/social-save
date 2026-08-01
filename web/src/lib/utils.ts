@@ -82,3 +82,31 @@ export function isInvalidCollectionMove(
     return descendants.includes(targetId);
   });
 }
+
+export function getInheritedTags(
+  collectionId: string | null,
+  collections: CollectionItem[],
+): string[] {
+  const collectionMap = new Map<string, CollectionItem>();
+  collections.forEach((c) => collectionMap.set(c.id, c));
+
+  const tags = new Set<string>();
+
+  if (!collectionId) {
+    collections.forEach((c) => (c.tags ?? []).forEach((t) => tags.add(t)));
+    return Array.from(tags);
+  }
+
+  let currentId: string | null = collectionId;
+  const visited = new Set<string>();
+
+  while (currentId && collectionMap.has(currentId) && !visited.has(currentId)) {
+    visited.add(currentId);
+    const col = collectionMap.get(currentId)!;
+    (col.tags ?? []).forEach((tag) => tags.add(tag));
+    currentId = col.parentId;
+  }
+
+  return Array.from(tags);
+}
+

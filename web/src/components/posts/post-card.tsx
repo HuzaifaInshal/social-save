@@ -55,7 +55,17 @@ export function PostCard({ post, checked, onToggleSelect, onEdit, onDelete, onRa
         {post.description && (
           <p className="post-card__desc">{post.description}</p>
         )}
+        {post.tags && post.tags.length > 0 && (
+          <div className="card-tags-list" style={{ marginTop: "0.35rem" }}>
+            {post.tags.map((tag) => (
+              <span key={tag} className="card-tag-pill card-tag-pill--post">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
+
 
 
       <div className="post-card__footer">

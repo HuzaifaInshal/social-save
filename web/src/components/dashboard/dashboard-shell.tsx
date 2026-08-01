@@ -84,10 +84,12 @@ export function DashboardShell() {
   const filteredPosts = useMemo(() => {
     let result = visiblePosts;
     if (normalizedQuery) {
+      const cleanQ = normalizedQuery.replace(/^#/, "");
       result = visiblePosts.filter((post) => {
         const textMatch = `${post.title} ${post.description} ${post.link} ${post.platform}`.toLowerCase().includes(normalizedQuery);
         const ratingMatch = post.rating ? `${post.rating} star`.includes(normalizedQuery) || `${post.rating}star`.includes(normalizedQuery) : false;
-        return textMatch || ratingMatch;
+        const tagMatch = post.tags ? post.tags.some((t) => t.toLowerCase().includes(cleanQ)) : false;
+        return textMatch || ratingMatch || tagMatch;
       });
     }
     return [...result].sort((a, b) => {
@@ -100,6 +102,7 @@ export function DashboardShell() {
       return b.createdAt - a.createdAt;
     });
   }, [normalizedQuery, visiblePosts, sortBy]);
+
 
 
   const resetModal = () => setModal(null);
@@ -444,7 +447,17 @@ export function DashboardShell() {
                               {post.rating ? `${post.rating} / 5 stars` : "Unrated"}
                             </span>
                           </div>
+                          {post.tags && post.tags.length > 0 && (
+                            <div className="card-tags-list" style={{ margin: "0.4rem 0 0.6rem 0" }}>
+                              {post.tags.map((tag) => (
+                                <span key={tag} className="card-tag-pill card-tag-pill--post">
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                           {post.description && <p className="post-single-desc">{post.description}</p>}
+
                           <div style={{ display: "inline-flex", alignItems: "center" }}>
                             <a href={post.link} target="_blank" rel="noreferrer" className="post-single-link">
                               {post.link.length > 60 ? `${post.link.substring(0, 60)}...` : post.link}

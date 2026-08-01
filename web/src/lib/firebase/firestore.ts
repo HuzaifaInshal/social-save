@@ -46,6 +46,7 @@ export async function createCollection(ownerId: string, values: CollectionFormVa
     title: values.title,
     description: values.description,
     parentId: values.parentId,
+    tags: values.tags ?? [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
     createdMarker: serverTimestamp(),
@@ -53,7 +54,10 @@ export async function createCollection(ownerId: string, values: CollectionFormVa
 }
 
 export async function updateCollection(collectionId: string, values: CollectionFormValues) {
-  return updateDoc(doc(getFirebaseDb(), COLLECTIONS, collectionId), withTimestamps(values));
+  return updateDoc(doc(getFirebaseDb(), COLLECTIONS, collectionId), withTimestamps({
+    ...values,
+    tags: values.tags ?? [],
+  }));
 }
 
 export async function createPost(ownerId: string, values: PostFormValues) {
@@ -64,6 +68,7 @@ export async function createPost(ownerId: string, values: PostFormValues) {
     description: values.description,
     link: values.link,
     rating: values.rating ?? 0,
+    tags: values.tags ?? [],
     platform: getPlatformFromLink(values.link),
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -77,10 +82,12 @@ export async function updatePost(postId: string, values: PostFormValues) {
     withTimestamps({
       ...values,
       rating: values.rating ?? 0,
+      tags: values.tags ?? [],
       platform: getPlatformFromLink(values.link),
     }),
   );
 }
+
 
 export async function updatePostRating(postId: string, rating: number) {
   return updateDoc(
