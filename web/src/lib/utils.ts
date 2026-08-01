@@ -102,11 +102,13 @@ export function getInheritedTags(
 
   while (currentId && collectionMap.has(currentId) && !visited.has(currentId)) {
     visited.add(currentId);
-    const col = collectionMap.get(currentId)!;
+    const col: CollectionItem | undefined = collectionMap.get(currentId);
+    if (!col) break;
     (col.tags ?? []).forEach((tag) => tags.add(tag));
     currentId = col.parentId;
   }
 
   return Array.from(tags);
 }
+
 
