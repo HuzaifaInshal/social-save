@@ -298,6 +298,128 @@
       font-weight: 500;
     }
 
+    .custom-select__search {
+      position: sticky;
+      top: -4px;
+      background: var(--surface);
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+      z-index: 2;
+    }
+
+    .custom-select__search-input {
+      width: 100%;
+      padding: 0.45rem 0.7rem;
+      border-radius: calc(var(--radius) - 2px);
+      border: 1px solid var(--border-strong);
+      background: var(--surface-hover);
+      color: var(--text);
+      font-size: 0.84rem;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .custom-select__search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    .custom-select__no-results {
+      padding: 0.65rem 0.9rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+    }
+
+    /* Star Rating */
+    .star-rating {
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+      user-select: none;
+    }
+
+    .star-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.35rem;
+      cursor: pointer;
+      color: rgba(148, 163, 184, 0.35);
+      transition: color 0.15s, transform 0.15s;
+      line-height: 1;
+      padding: 0 0.08rem;
+    }
+
+    .star-btn:hover,
+    .star-btn.hovered,
+    .star-btn.active {
+      color: #f59e0b;
+      transform: scale(1.18);
+    }
+
+    .star-rating-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-left: 0.4rem;
+    }
+
+    /* Tag Chips in Extension */
+    .tag-chips-selectable,
+    .card-tags-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      align-items: center;
+    }
+
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      user-select: none;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      color: var(--text-muted);
+      transition: all 0.15s ease;
+    }
+
+    .tag-chip:hover {
+      background: var(--surface-hover);
+      color: var(--text);
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .tag-chip.selected {
+      background: linear-gradient(135deg, #7c5cff, #513eeb);
+      border-color: #9b7cff;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(124, 92, 255, 0.35);
+    }
+
+    .card-tag-pill {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 500;
+      padding: 0.12rem 0.48rem;
+      border-radius: 5px;
+      background: rgba(16, 185, 129, 0.14);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      color: #6ee7b7;
+    }
+
+    .tag-hint-text {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
     .input-control--area {
       resize: vertical;
       min-height: 90px;
@@ -539,6 +661,26 @@
         </div>
       </div>
 
+      <!-- Rating Section -->
+      <div class="form-group">
+        <label class="label">Rating</label>
+        <div class="star-rating" id="star-rating-container">
+          <button type="button" class="star-btn" data-value="1" title="1 star">★</button>
+          <button type="button" class="star-btn" data-value="2" title="2 stars">★</button>
+          <button type="button" class="star-btn" data-value="3" title="3 stars">★</button>
+          <button type="button" class="star-btn" data-value="4" title="4 stars">★</button>
+          <button type="button" class="star-btn" data-value="5" title="5 stars">★</button>
+          <span class="star-rating-label" id="lbl-rating-text">Unrated</span>
+        </div>
+      </div>
+
+      <!-- Select Tags Section -->
+      <div class="form-group">
+        <label class="label">Select Tags</label>
+        <div class="tag-chips-selectable" id="tag-chips-container"></div>
+        <p class="tag-hint-text" id="lbl-tag-hint" style="display: none;">No tags created for this collection yet.</p>
+      </div>
+
       <button id="btn-bookmark" class="btn btn--primary">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px; margin-right: 0.45rem;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
         Save Bookmark
@@ -555,6 +697,11 @@
       <div class="form-group" style="width: 100%; text-align: left;">
         <span class="label">Bookmarked Link</span>
         <div class="info-card" id="txt-saved-url">Loading page URL...</div>
+      </div>
+
+      <div class="form-group" id="saved-meta-container" style="width: 100%; text-align: left; display: none;">
+        <div id="saved-stars-display" class="star-rating" style="margin-bottom: 0.35rem;"></div>
+        <div id="saved-tags-display" class="card-tags-list"></div>
       </div>
 
       <button id="btn-unbookmark" class="btn btn--danger">

@@ -137,10 +137,14 @@ async function restFetchCollections(projectId, idToken, uid) {
       const doc = item.document;
       const fields = doc.fields;
       const id = doc.name.split("/").pop();
+      const tags = fields.tags?.arrayValue?.values
+        ? fields.tags.arrayValue.values.map(v => v.stringValue).filter(Boolean)
+        : [];
       return {
         id,
         title: fields.title?.stringValue || "",
-        parentId: fields.parentId?.stringValue || null
+        parentId: fields.parentId?.stringValue || null,
+        tags
       };
     });
 }
@@ -175,11 +179,21 @@ async function restFetchPosts(projectId, idToken, uid) {
       const doc = item.document;
       const fields = doc.fields;
       const id = doc.name.split("/").pop();
+      const rating = fields.rating?.integerValue
+        ? parseInt(fields.rating.integerValue, 10)
+        : fields.rating?.doubleValue
+        ? Math.round(fields.rating.doubleValue)
+        : 0;
+      const tags = fields.tags?.arrayValue?.values
+        ? fields.tags.arrayValue.values.map(v => v.stringValue).filter(Boolean)
+        : [];
       return {
         id,
         link: fields.link?.stringValue || "",
         title: fields.title?.stringValue || "",
-        collectionId: fields.collectionId?.stringValue || null
+        collectionId: fields.collectionId?.stringValue || null,
+        rating,
+        tags
       };
     });
 }
@@ -201,7 +215,7 @@ const getPlatformFromLink = (url) => {
   }
 };
 
-async function restAddBookmark(projectId, idToken, uid, { title, description, link, collectionId }) {
+async function restAddBookmark(projectId, idToken, uid, { title, description, link, collectionId, rating, tags }) {
   const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/posts`;
   const fields = {
     ownerId: { stringValue: uid },
@@ -209,6 +223,12 @@ async function restAddBookmark(projectId, idToken, uid, { title, description, li
     description: { stringValue: description || "" },
     link: { stringValue: link },
     platform: { stringValue: getPlatformFromLink(link) },
+    rating: { integerValue: rating || 0 },
+    tags: {
+      arrayValue: {
+        values: (tags || []).map(t => ({ stringValue: t }))
+      }
+    },
     createdAt: { doubleValue: Date.now() },
     updatedAt: { doubleValue: Date.now() }
   };
@@ -256,6 +276,118 @@ async function restRemoveBookmark(projectId, idToken, postId) {
 let cachedCollections = null;
 let cachedPosts = null;
 let cachedOfflineData = null;
+
+// Rating & Tag State Management
+let selectedRating = 0;
+let selectedTags = [];
+
+function updateRatingUI(rating) {
+  selectedRating = rating;
+  const container = document.getElementById("star-rating-container");
+  if (!container) return;
+  const btns = container.querySelectorAll(".star-btn");
+  btns.forEach((btn) => {
+    const val = parseInt(btn.getAttribute("data-value"), 10);
+    if (val <= rating) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
+    }
+  });
+  const lbl = document.getElementById("lbl-rating-text");
+  if (lbl) {
+    lbl.textContent = rating > 0 ? `${rating} / 5 stars` : "Unrated";
+  }
+}
+
+function initStarRatingEvents() {
+  const container = document.getElementById("star-rating-container");
+  if (!container) return;
+  const btns = container.querySelectorAll(".star-btn");
+  btns.forEach((btn) => {
+    const val = parseInt(btn.getAttribute("data-value"), 10);
+    btn.onclick = (e) => {
+      e.preventDefault();
+      const newRating = selectedRating === val ? 0 : val;
+      updateRatingUI(newRating);
+    };
+    btn.onmouseenter = () => {
+      btns.forEach((b) => {
+        const v = parseInt(b.getAttribute("data-value"), 10);
+        if (v <= val) b.classList.add("hovered");
+        else b.classList.remove("hovered");
+      });
+    };
+    btn.onmouseleave = () => {
+      btns.forEach((b) => b.classList.remove("hovered"));
+    };
+  });
+}
+
+function getInheritedTags(collectionId, collections) {
+  const collectionMap = new Map();
+  (collections || []).forEach((c) => collectionMap.set(c.id, c));
+
+  const tags = new Set();
+
+  if (!collectionId) {
+    (collections || []).forEach((c) => (c.tags || []).forEach((t) => tags.add(t)));
+    return Array.from(tags);
+  }
+
+  let currentId = collectionId;
+  const visited = new Set();
+
+  while (currentId && collectionMap.has(currentId) && !visited.has(currentId)) {
+    visited.add(currentId);
+    const col = collectionMap.get(currentId);
+    if (!col) break;
+    (col.tags || []).forEach((tag) => tags.add(tag));
+    currentId = col.parentId;
+  }
+
+  return Array.from(tags);
+}
+
+function renderSelectableTags(collectionId, collections) {
+  const container = document.getElementById("tag-chips-container");
+  const hint = document.getElementById("lbl-tag-hint");
+  if (!container || !hint) return;
+
+  const availableTags = getInheritedTags(collectionId, collections);
+  container.innerHTML = "";
+
+  if (availableTags.length === 0) {
+    container.style.display = "none";
+    hint.style.display = "block";
+    selectedTags = [];
+    return;
+  }
+
+  container.style.display = "flex";
+  hint.style.display = "none";
+
+  // Filter selectedTags to keep only tags present in availableTags
+  selectedTags = selectedTags.filter((t) => availableTags.includes(t));
+
+  availableTags.forEach((tag) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    const isSelected = selectedTags.includes(tag);
+    btn.className = `tag-chip ${isSelected ? "selected" : ""}`;
+    btn.textContent = `${isSelected ? "✓ " : "+ "}${tag}`;
+    btn.onclick = (e) => {
+      e.preventDefault();
+      if (selectedTags.includes(tag)) {
+        selectedTags = selectedTags.filter((t) => t !== tag);
+      } else {
+        selectedTags.push(tag);
+      }
+      renderSelectableTags(collectionId, collections);
+    };
+    container.appendChild(btn);
+  });
+}
 
 async function initPanel() {
   // Fetch collection select persistence value and autoFetchTitle setting first
@@ -377,6 +509,35 @@ async function initPanel() {
     
     document.getElementById("lbl-saved-message").textContent = `Saved in: ${collectionTitle}`;
     document.getElementById("txt-saved-url").textContent = existingBookmark.link;
+
+    const metaContainer = document.getElementById("saved-meta-container");
+    const starsDisplay = document.getElementById("saved-stars-display");
+    const tagsDisplay = document.getElementById("saved-tags-display");
+
+    if ((existingBookmark.rating && existingBookmark.rating > 0) || (existingBookmark.tags && existingBookmark.tags.length > 0)) {
+      metaContainer.style.display = "block";
+
+      if (existingBookmark.rating && existingBookmark.rating > 0) {
+        let starsHtml = "";
+        for (let i = 1; i <= 5; i++) {
+          starsHtml += `<span class="star-btn ${i <= existingBookmark.rating ? 'active' : ''}" style="cursor: default;">★</span>`;
+        }
+        starsDisplay.innerHTML = `
+          ${starsHtml}
+          <span class="star-rating-label">${existingBookmark.rating} / 5 stars</span>
+        `;
+      } else {
+        starsDisplay.innerHTML = "";
+      }
+
+      if (existingBookmark.tags && existingBookmark.tags.length > 0) {
+        tagsDisplay.innerHTML = existingBookmark.tags.map(t => `<span class="card-tag-pill">${t}</span>`).join("");
+      } else {
+        tagsDisplay.innerHTML = "";
+      }
+    } else {
+      metaContainer.style.display = "none";
+    }
     
     // Bind Unbookmark click
     document.getElementById("btn-unbookmark").onclick = async () => {
@@ -402,37 +563,12 @@ async function initPanel() {
     document.getElementById("txt-page-url").textContent = pageUrl;
     document.getElementById("inp-title").value = autoFetchTitle ? pageTitle : "";
 
-    // Populating Collections custom dropdown
-    const options = [
-      { value: "", label: "Root level (no collection)" }
-    ];
-    
-    // Simple indentation helper for subfolders if they have a parentId structure
-    const map = new Map(collections.map(c => [c.id, { ...c, depth: 0 }]));
-    
-    // Calculate depths
-    let changed = true;
-    while (changed) {
-      changed = false;
-      for (const [id, item] of map.entries()) {
-        if (item.parentId && map.has(item.parentId)) {
-          const parent = map.get(item.parentId);
-          const newDepth = parent.depth + 1;
-          if (item.depth !== newDepth) {
-            item.depth = newDepth;
-            changed = true;
-          }
-        }
-      }
-    }
+    // Reset Rating and Tags selection state for new post
+    updateRatingUI(0);
+    selectedTags = [];
 
-    // Sort by title and render
-    const sortedCollections = Array.from(map.values()).sort((a, b) => a.title.localeCompare(b.title));
-    
-    sortedCollections.forEach(c => {
-      const indent = "\u00A0\u00A0".repeat(c.depth) + (c.depth > 0 ? "↳ " : "");
-      options.push({ value: c.id, label: indent + c.title });
-    });
+    // Populate collections using plain nested tree hierarchy (without alphabetical sorting)
+    const options = buildNestedCollectionOptions(collections);
 
     // Always reset Save Bookmark button back to original active state when rendering the form state
     const btnBookmark = document.getElementById("btn-bookmark");
@@ -454,6 +590,9 @@ async function initPanel() {
       selectedCollectionId = null;
     }
 
+    // Render initial tag options for selected collection
+    renderSelectableTags(selectedCollectionId, collections);
+
     // Bind Bookmark click
     btnBookmark.onclick = async () => {
       const title = document.getElementById("inp-title").value.trim();
@@ -468,7 +607,7 @@ async function initPanel() {
 
       try {
         const createdPostId = await restAddBookmark(cachedOfflineData.projectId, cachedOfflineData.idToken, cachedOfflineData.uid, {
-          title: finalTitle, description, link: pageUrl, collectionId
+          title: finalTitle, description, link: pageUrl, collectionId, rating: selectedRating, tags: selectedTags
         });
         
         // Clear caches so the next check gets fresh database state
@@ -484,6 +623,52 @@ async function initPanel() {
 
     showState("state-form");
   }
+}
+
+// Helper to build nested collection options maintaining depth-first tree order without alphabetical sorting
+function buildNestedCollectionOptions(collections) {
+  const options = [
+    { value: "", label: "Root level (no collection)", searchTitle: "Root level" }
+  ];
+
+  if (!collections || !Array.isArray(collections)) return options;
+
+  const byParent = new Map();
+  collections.forEach(col => {
+    const parentId = col.parentId || "root";
+    if (!byParent.has(parentId)) {
+      byParent.set(parentId, []);
+    }
+    byParent.get(parentId).push(col);
+  });
+
+  function traverse(parentId, depth) {
+    const children = byParent.get(parentId) || [];
+    children.forEach(col => {
+      const indent = "\u00A0\u00A0".repeat(depth) + (depth > 0 ? "↳ " : "");
+      options.push({
+        value: col.id,
+        label: indent + col.title,
+        searchTitle: col.title
+      });
+      traverse(col.id, depth + 1);
+    });
+  }
+
+  traverse("root", 0);
+
+  const visitedIds = new Set(options.map(o => o.value));
+  collections.forEach(col => {
+    if (!visitedIds.has(col.id)) {
+      options.push({
+        value: col.id,
+        label: col.title,
+        searchTitle: col.title
+      });
+    }
+  });
+
+  return options;
 }
 
 // Settings navigation state
@@ -536,7 +721,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     selectedCollectionId = val || null;
     lastSelectedCollectionId = val || "";
     chrome.storage.local.set({ lastSelectedCollectionId: lastSelectedCollectionId });
-  });
+  }, { hasSearch: true });
   
   viewStyleSelect = setupCustomSelect("select-view-style", async (val) => {
     await new Promise(resolve => {
@@ -587,7 +772,7 @@ document.addEventListener("click", () => {
 });
 
 // Custom Select Component Helper
-function setupCustomSelect(containerId, onChange) {
+function setupCustomSelect(containerId, onChange, { hasSearch = false } = {}) {
   const container = document.getElementById(containerId);
   if (!container) return null;
   
@@ -595,13 +780,67 @@ function setupCustomSelect(containerId, onChange) {
   const optionsContainer = container.querySelector(".custom-select__options");
   const valueSpan = container.querySelector(".custom-select__value");
   
+  let searchInput = null;
+
+  if (hasSearch) {
+    const searchWrapper = document.createElement("div");
+    searchWrapper.className = "custom-select__search";
+    searchWrapper.innerHTML = `
+      <input type="text" class="custom-select__search-input" placeholder="Search collections..." tabindex="-1" />
+    `;
+    optionsContainer.prepend(searchWrapper);
+    searchInput = searchWrapper.querySelector(".custom-select__search-input");
+
+    searchInput.addEventListener("click", (e) => e.stopPropagation());
+    searchInput.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+    });
+    searchInput.addEventListener("input", (e) => {
+      filterOptions(e.target.value);
+    });
+  }
+
+  function filterOptions(query) {
+    const cleanQuery = query.trim().toLowerCase();
+    const optionEls = optionsContainer.querySelectorAll(".custom-select__option");
+    let matchCount = 0;
+
+    optionEls.forEach(opt => {
+      const searchTitle = (opt.getAttribute("data-search-title") || opt.textContent).toLowerCase();
+      if (!cleanQuery || searchTitle.includes(cleanQuery)) {
+        opt.style.display = "";
+        matchCount++;
+      } else {
+        opt.style.display = "none";
+      }
+    });
+
+    let noResultEl = optionsContainer.querySelector(".custom-select__no-results");
+    if (matchCount === 0) {
+      if (!noResultEl) {
+        noResultEl = document.createElement("div");
+        noResultEl.className = "custom-select__no-results";
+        noResultEl.textContent = "No collections found";
+        optionsContainer.appendChild(noResultEl);
+      }
+      noResultEl.style.display = "block";
+    } else if (noResultEl) {
+      noResultEl.style.display = "none";
+    }
+  }
+
   trigger.onclick = (e) => {
     e.stopPropagation();
     // Close other custom selects
     document.querySelectorAll(".custom-select").forEach(el => {
       if (el !== container) el.classList.remove("active");
     });
-    container.classList.toggle("active");
+    const isActive = container.classList.toggle("active");
+    if (isActive && searchInput) {
+      searchInput.value = "";
+      filterOptions("");
+      setTimeout(() => searchInput.focus(), 50);
+    }
   };
   
   function bindOptions() {
@@ -633,9 +872,20 @@ function setupCustomSelect(containerId, onChange) {
       }
     },
     updateOptions: (newOptions) => {
-      optionsContainer.innerHTML = newOptions.map(opt => `
-        <div class="custom-select__option" data-value="${opt.value}">${opt.label}</div>
-      `).join("");
+      const searchWrapper = optionsContainer.querySelector(".custom-select__search");
+      optionsContainer.innerHTML = "";
+      if (searchWrapper) {
+        optionsContainer.appendChild(searchWrapper);
+      }
+      
+      newOptions.forEach(opt => {
+        const div = document.createElement("div");
+        div.className = "custom-select__option";
+        div.setAttribute("data-value", opt.value);
+        div.setAttribute("data-search-title", opt.searchTitle || opt.label);
+        div.textContent = opt.label;
+        optionsContainer.appendChild(div);
+      });
       bindOptions();
     }
   };
