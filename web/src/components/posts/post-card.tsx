@@ -59,7 +59,7 @@ export function PostCard({ post, checked, onToggleSelect, onEdit, onDelete, onRa
           <div className="card-tags-list" style={{ marginTop: "0.35rem" }}>
             {post.tags.map((tag) => (
               <span key={tag} className="card-tag-pill card-tag-pill--post">
-                #{tag}
+                {tag}
               </span>
             ))}
           </div>

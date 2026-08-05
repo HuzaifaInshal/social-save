@@ -106,7 +106,7 @@ export function PostFormModal({
                     className={`tag-chip tag-chip--selectable ${isSelected ? "tag-chip--selected" : ""}`}
                     onClick={() => toggleTag(tag)}
                   >
-                    {isSelected ? "✓ #" : "+ #"}
+                    {isSelected ? "✓ " : "+ "}
                     {tag}
                   </button>
                 );

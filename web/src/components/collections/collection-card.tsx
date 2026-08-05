@@ -40,7 +40,7 @@ export function CollectionCard({ collection, checked, onOpen, onToggleSelect, on
         <div className="card-tags-list">
           {collection.tags.map((tag) => (
             <span key={tag} className="card-tag-pill">
-              #{tag}
+              {tag}
             </span>
           ))}
         </div>

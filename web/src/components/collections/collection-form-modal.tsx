@@ -120,7 +120,7 @@ export function CollectionFormModal({
               <div className="tag-chips-list">
                 {(values.tags ?? []).map((tag) => (
                   <span key={tag} className="tag-chip tag-chip--editable">
-                    #{tag}
+                    {tag}
                     <button
                       type="button"
                       className="tag-chip__remove"
@@ -139,7 +139,7 @@ export function CollectionFormModal({
                 <div className="tag-chips-list">
                   {inheritedParentTags.map((tag) => (
                     <span key={tag} className="tag-chip tag-chip--inherited" title="Inherited from parent collection">
-                      #{tag}
+                      {tag}
                     </span>
                   ))}
                 </div>

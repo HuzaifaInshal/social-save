@@ -451,7 +451,7 @@ export function DashboardShell() {
                             <div className="card-tags-list" style={{ margin: "0.4rem 0 0.6rem 0" }}>
                               {post.tags.map((tag) => (
                                 <span key={tag} className="card-tag-pill card-tag-pill--post">
-                                  #{tag}
+                                  {tag}
                                 </span>
                               ))}
                             </div>
