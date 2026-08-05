@@ -20,9 +20,10 @@ type PostCardProps = {
   onEdit: (post: PostItem) => void;
   onDelete: (post: PostItem) => void;
   onRate?: (post: PostItem, rating: number) => void;
+  onTagClick?: (tag: string) => void;
 };
 
-export function PostCard({ post, checked, onToggleSelect, onEdit, onDelete, onRate }: PostCardProps) {
+export function PostCard({ post, checked, onToggleSelect, onEdit, onDelete, onRate, onTagClick }: PostCardProps) {
   const host = safeHost(post.link);
 
   return (
@@ -58,7 +59,18 @@ export function PostCard({ post, checked, onToggleSelect, onEdit, onDelete, onRa
         {post.tags && post.tags.length > 0 && (
           <div className="card-tags-list" style={{ marginTop: "0.35rem" }}>
             {post.tags.map((tag) => (
-              <span key={tag} className="card-tag-pill card-tag-pill--post">
+              <span
+                key={tag}
+                className="card-tag-pill card-tag-pill--post"
+                style={onTagClick ? { cursor: "pointer" } : undefined}
+                onClick={(e) => {
+                  if (onTagClick) {
+                    e.stopPropagation();
+                    onTagClick(tag);
+                  }
+                }}
+                title={onTagClick ? `Filter by ${tag}` : undefined}
+              >
                 {tag}
               </span>
             ))}

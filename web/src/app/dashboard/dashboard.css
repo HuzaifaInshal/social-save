@@ -141,6 +141,7 @@
 }
 
 .sidebar__footer {
+  position: relative;
   padding: 1rem 1.5rem;
   border-top: 1px solid rgba(111, 130, 174, 0.12);
 }
@@ -149,6 +150,97 @@
   display: flex;
   align-items: center;
   gap: 0.78rem;
+  cursor: pointer;
+  padding: 0.4rem 0.5rem;
+  margin: -0.4rem -0.5rem;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+  user-select: none;
+}
+
+.sidebar__user:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-user-menu {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 1rem;
+  right: 1rem;
+  background: rgba(14, 22, 42, 0.95);
+  border: 1px solid rgba(137, 155, 203, 0.24);
+  border-radius: 12px;
+  padding: 0.5rem;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(16px);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  animation: popoverFadeIn 0.15s ease-out;
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sidebar-user-menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: rgba(235, 238, 255, 0.85);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-user-menu__item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.sidebar-user-menu__item--danger {
+  color: #ff7180;
+}
+
+.sidebar-user-menu__item--danger:hover {
+  background: rgba(248, 75, 98, 0.14);
+  color: #ff4d61;
+}
+
+.sidebar-user-menu__divider {
+  height: 1px;
+  background: rgba(137, 155, 203, 0.15);
+  margin: 0.2rem 0;
+}
+
+:root[data-theme="light"] .sidebar-user-menu {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(92, 112, 150, 0.2);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12);
+  color: #111827;
+}
+
+:root[data-theme="light"] .sidebar-user-menu__item {
+  color: #374151;
+}
+
+:root[data-theme="light"] .sidebar-user-menu__item:hover {
+  background: #f3f4f6;
+  color: #111827;
 }
 
 .sidebar__avatar {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useQueryState, parseAsString, parseAsStringLiteral, parseAsInteger } from "nuqs";
 import { useAuth } from "@/components/auth/auth-provider";
 import { SignInPanel } from "@/components/auth/sign-in-panel";
 import { CollectionCard } from "@/components/collections/collection-card";
@@ -14,7 +15,7 @@ import { StarRating } from "@/components/ui/star-rating";
 import { useToast } from "@/components/ui/toast";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { updatePostRating } from "@/lib/firebase/firestore";
-import { cn } from "@/lib/utils";
+import { cn, getInheritedTags } from "@/lib/utils";
 import { PostItem, SelectionState } from "@/types";
 
 const emptySelection: SelectionState = { collectionIds: [], postIds: [] };
@@ -26,14 +27,23 @@ export function DashboardShell() {
   const { user, loading, isConfigured, signOut } = useAuth();
   const { showError } = useToast();
   const { collections, posts, tree } = useWorkspace(user?.uid);
-  const [currentCollectionId, setCurrentCollectionId] = useState<string | null>(null);
+
+  // URL state with nuqs
+  const [currentCollectionId, setCurrentCollectionId] = useQueryState("collection", parseAsString);
+  const [activeTab, setActiveTab] = useQueryState(
+    "tab",
+    parseAsStringLiteral(["info", "collections", "posts"] as const).withDefault("info")
+  );
+  const [query, setQuery] = useQueryState("q", parseAsString.withDefault(""));
+  const [selectedTagFilter, setSelectedTagFilter] = useQueryState("tag", parseAsString);
+  const [selectedRatingFilter, setSelectedRatingFilter] = useQueryState("rating", parseAsInteger);
+
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [selection, setSelection] = useState<SelectionState>(emptySelection);
   const [modal, setModal] = useState<ModalState | null>(null);
   const [signingOut, setSigningOut] = useState(false);
-  const [activeTab, setActiveTab] = useState<DashboardTab>("info");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [activePostIndex, setActivePostIndex] = useState(0);
-  const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [copiedPostId, setCopiedPostId] = useState<string | null>(null);
 
@@ -74,6 +84,15 @@ export function DashboardShell() {
     () => posts.filter((p) => p.collectionId === currentCollectionId),
     [posts, currentCollectionId],
   );
+  const currentCollectionTags = useMemo(
+    () => getInheritedTags(currentCollectionId, collections),
+    [currentCollectionId, collections],
+  );
+  const availablePostTags = useMemo(() => {
+    const postTags = visiblePosts.flatMap((p) => p.tags ?? []);
+    return Array.from(new Set([...currentCollectionTags, ...postTags]));
+  }, [currentCollectionTags, visiblePosts]);
+
   const normalizedQuery = query.trim().toLowerCase();
   const filteredCollections = useMemo(() => {
     if (!normalizedQuery) return visibleCollections;
@@ -83,9 +102,19 @@ export function DashboardShell() {
   }, [normalizedQuery, visibleCollections]);
   const filteredPosts = useMemo(() => {
     let result = visiblePosts;
+    if (selectedRatingFilter !== null && selectedRatingFilter !== undefined) {
+      if (selectedRatingFilter === 0) {
+        result = result.filter((post) => !post.rating || post.rating === 0);
+      } else {
+        result = result.filter((post) => post.rating === selectedRatingFilter);
+      }
+    }
+    if (selectedTagFilter) {
+      result = result.filter((post) => (post.tags ?? []).includes(selectedTagFilter));
+    }
     if (normalizedQuery) {
       const cleanQ = normalizedQuery.replace(/^#/, "");
-      result = visiblePosts.filter((post) => {
+      result = result.filter((post) => {
         const textMatch = `${post.title} ${post.description} ${post.link} ${post.platform}`.toLowerCase().includes(normalizedQuery);
         const ratingMatch = post.rating ? `${post.rating} star`.includes(normalizedQuery) || `${post.rating}star`.includes(normalizedQuery) : false;
         const tagMatch = post.tags ? post.tags.some((t) => t.toLowerCase().includes(cleanQ)) : false;
@@ -101,14 +130,14 @@ export function DashboardShell() {
       }
       return b.createdAt - a.createdAt;
     });
-  }, [normalizedQuery, visiblePosts, sortBy]);
-
-
+  }, [normalizedQuery, visiblePosts, sortBy, selectedTagFilter, selectedRatingFilter]);
 
   const resetModal = () => setModal(null);
   const resetSelection = () => setSelection(emptySelection);
   const openCollection = (id: string | null) => {
     setCurrentCollectionId(id);
+    setSelectedTagFilter(null);
+    setSelectedRatingFilter(null);
     setActiveTab("info");
     resetSelection();
   };
@@ -177,46 +206,62 @@ export function DashboardShell() {
           />
         </div>
 
-        <div className="sidebar__footer">
-          <div className="sidebar__user">
+        <div
+          className="sidebar__footer"
+          onMouseEnter={() => setUserMenuOpen(true)}
+          onMouseLeave={() => setUserMenuOpen(false)}
+        >
+          {userMenuOpen && (
+            <div className="sidebar-user-menu">
+              <div className="sidebar-user-menu__item">
+                <span style={{ fontSize: "0.85rem", opacity: 0.85 }}>Theme</span>
+                <ThemeToggle />
+              </div>
+              <div className="sidebar-user-menu__divider" />
+              <button
+                type="button"
+                className="sidebar-user-menu__item sidebar-user-menu__item--danger"
+                onClick={() => void handleSignOut()}
+                disabled={signingOut}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  <span>{signingOut ? "Signing out..." : "Sign out"}</span>
+                </div>
+              </button>
+            </div>
+          )}
+
+          <div
+            className="sidebar__user"
+            onClick={() => setUserMenuOpen((prev) => !prev)}
+            tabIndex={0}
+            role="button"
+            aria-haspopup="true"
+            aria-expanded={userMenuOpen}
+          >
             <div className="sidebar__avatar">{userInitial}</div>
             <div className="sidebar__user-info">
               <div className="sidebar__user-name">{userName}</div>
               <div className="sidebar__user-email">{user.email}</div>
             </div>
-            <span className="sidebar__user-chevron" aria-hidden="true">⌄</span>
+            <span className="sidebar__user-chevron" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m18 15-6-6-6 6" />
+              </svg>
+            </span>
           </div>
         </div>
       </aside>
 
       {/* Main */}
       <main className="dashboard-main">
-        {/* Topbar */}
-        <div className="dashboard-topbar">
-          <div className="dashboard-search">
-            <span className="dashboard-search__icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.15a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" /></svg>
-            </span>
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search posts and collections..."
-              aria-label="Search"
-            />
-          </div>
-          <div className="dashboard-topbar__actions">
-            <ThemeToggle />
-            <button className="icon-button" aria-label="Notifications" type="button">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7Z" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
-            </button>
-            <Button variant="ghost" onClick={() => void handleSignOut()} disabled={signingOut} style={{ fontSize: "0.85rem" }}>
-              {signingOut ? "Signing out…" : "Sign out"}
-            </Button>
-          </div>
-        </div>
-
         {/* Content */}
-        <div className="dashboard-content">
+        <div className="dashboard-content" style={{ paddingTop: "1.5rem" }}>
           {/* Bulk action bar */}
           {hasSelection && (
             <div className="bulk-bar">
@@ -338,6 +383,30 @@ export function DashboardShell() {
                   <span>Posts Here</span>
                 </div>
               </div>
+
+              {currentCollectionTags.length > 0 && (
+                <div className="info-tags-section" style={{ marginTop: "1.25rem" }}>
+                  <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-2)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: "0.45rem" }}>
+                    Available Tags ({currentCollectionTags.length})
+                  </span>
+                  <div className="card-tags-list">
+                    {currentCollectionTags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        className="tag-chip tag-chip--selectable"
+                        onClick={() => {
+                          setSelectedTagFilter(tag);
+                          setActiveTab("posts");
+                        }}
+                        title={`View posts tagged with ${tag}`}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="dashboard-profile-orb" aria-hidden="true">
               <div className="dashboard-profile-orb__inner">{pageTitle[0]?.toUpperCase() ?? "S"}</div>
@@ -406,10 +475,80 @@ export function DashboardShell() {
                   </Button>
                   <div className="post-filter">
                     <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m21 21-4.35-4.35m2.35-5.15a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" /></svg></span>
-                    <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter posts..." aria-label="Filter posts" />
+                    <input value={query} onChange={(event) => void setQuery(event.target.value || null)} placeholder="Filter posts..." aria-label="Filter posts" />
                     <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" /></svg></span>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {viewMode !== "single" && (
+              <div className="posts-filter-bars" style={{ margin: "0.5rem 0 1rem 0", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {/* Rating Filter Bar */}
+                <div className="posts-rating-filter-bar" style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: "0.82rem", color: "var(--text-2)", fontWeight: 500, marginRight: "0.2rem" }}>
+                    Filter by rating:
+                  </span>
+                  <button
+                    type="button"
+                    className={`tag-chip tag-chip--selectable ${selectedRatingFilter === null ? "tag-chip--selected" : ""}`}
+                    onClick={() => setSelectedRatingFilter(null)}
+                  >
+                    All
+                  </button>
+                  {[5, 4, 3, 2, 1].map((stars) => {
+                    const isSelected = selectedRatingFilter === stars;
+                    return (
+                      <button
+                        key={stars}
+                        type="button"
+                        className={`tag-chip tag-chip--selectable ${isSelected ? "tag-chip--selected" : ""}`}
+                        onClick={() => setSelectedRatingFilter(isSelected ? null : stars)}
+                      >
+                        {isSelected ? "✓ " : ""}
+                        ★ {stars}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    className={`tag-chip tag-chip--selectable ${selectedRatingFilter === 0 ? "tag-chip--selected" : ""}`}
+                    onClick={() => setSelectedRatingFilter(selectedRatingFilter === 0 ? null : 0)}
+                  >
+                    {selectedRatingFilter === 0 ? "✓ " : ""}
+                    Unrated
+                  </button>
+                </div>
+
+                {/* Tag Filter Bar */}
+                {availablePostTags.length > 0 && (
+                  <div className="posts-tag-filter-bar" style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "0.82rem", color: "var(--text-2)", fontWeight: 500, marginRight: "0.2rem" }}>
+                      Filter by tag:
+                    </span>
+                    <button
+                      type="button"
+                      className={`tag-chip tag-chip--selectable ${selectedTagFilter === null ? "tag-chip--selected" : ""}`}
+                      onClick={() => setSelectedTagFilter(null)}
+                    >
+                      All
+                    </button>
+                    {availablePostTags.map((tag) => {
+                      const isSelected = selectedTagFilter === tag;
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          className={`tag-chip tag-chip--selectable ${isSelected ? "tag-chip--selected" : ""}`}
+                          onClick={() => setSelectedTagFilter(isSelected ? null : tag)}
+                        >
+                          {isSelected ? "✓ " : ""}
+                          {tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
@@ -425,6 +564,7 @@ export function DashboardShell() {
                       onEdit={(item) => setModal({ type: "editPost", post: item })}
                       onDelete={(item) => setModal({ type: "deletePosts", postIds: [item.id] })}
                       onRate={(item, rating) => void handleRatePost(item, rating)}
+                      onTagClick={(tag) => setSelectedTagFilter((curr) => (curr === tag ? null : tag))}
                     />
                   ))}
                 </div>
@@ -437,16 +577,6 @@ export function DashboardShell() {
                       <div className="post-single-header">
                         <div className="post-single-header__meta">
                           <h3 className="post-single-title">{post.title}</h3>
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", margin: "0.35rem 0 0.5rem 0" }}>
-                            <StarRating
-                              value={post.rating ?? 0}
-                              size="md"
-                              onChange={(rating) => void handleRatePost(post, rating)}
-                            />
-                            <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>
-                              {post.rating ? `${post.rating} / 5 stars` : "Unrated"}
-                            </span>
-                          </div>
                           {post.tags && post.tags.length > 0 && (
                             <div className="card-tags-list" style={{ margin: "0.4rem 0 0.6rem 0" }}>
                               {post.tags.map((tag) => (
@@ -522,11 +652,28 @@ export function DashboardShell() {
               })()
             ) : (
               <div className="empty-state">
-                <span className="empty-state__icon">🔗</span>
-                <p>No posts saved here yet.</p>
-                <Button variant="secondary" onClick={() => setModal({ type: "createPost", collectionId: currentCollectionId })}>
-                  Add first post
-                </Button>
+                <span className="empty-state__icon">{selectedTagFilter || selectedRatingFilter !== null || query ? "🔍" : "🔗"}</span>
+                <p>
+                  {selectedTagFilter || selectedRatingFilter !== null || query
+                    ? "No posts found matching your filter criteria."
+                    : "No posts saved here yet."}
+                </p>
+                {selectedTagFilter || selectedRatingFilter !== null || query ? (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setSelectedTagFilter(null);
+                      setSelectedRatingFilter(null);
+                      void setQuery(null);
+                    }}
+                  >
+                    Clear filters
+                  </Button>
+                ) : (
+                  <Button variant="secondary" onClick={() => setModal({ type: "createPost", collectionId: currentCollectionId })}>
+                    Add first post
+                  </Button>
+                )}
               </div>
             )}
           </div>}
