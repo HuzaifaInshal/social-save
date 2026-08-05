@@ -716,11 +716,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     showState(activeStateBeforeSettings);
   };
 
+  // Initialize star rating events
+  initStarRatingEvents();
+
   // Initialize custom select components
   collectionSelect = setupCustomSelect("select-collection", (val) => {
     selectedCollectionId = val || null;
     lastSelectedCollectionId = val || "";
     chrome.storage.local.set({ lastSelectedCollectionId: lastSelectedCollectionId });
+    if (cachedCollections) {
+      renderSelectableTags(selectedCollectionId, cachedCollections);
+    }
   }, { hasSearch: true });
   
   viewStyleSelect = setupCustomSelect("select-view-style", async (val) => {
