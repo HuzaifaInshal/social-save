@@ -110,7 +110,7 @@ export function CollectionFormModal({
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type tag and press Enter (e.g. food, tutorial)..."
+                placeholder="Add tag (e.g. food, tutorial)..."
               />
               <Button type="button" variant="secondary" onClick={handleAddTag} disabled={!tagInput.trim()}>
                 Add Tag

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, KeyboardEvent } from "react";
+import { useState } from "react";
 import { Modal } from "@/components/modals/modal";
 import { Button } from "@/components/ui/button";
 import { FieldWrapper, SelectInput, TextArea, TextInput } from "@/components/ui/field";
@@ -29,9 +29,14 @@ export function PostFormModal({
     ...initialValues,
     tags: initialValues.tags ?? [],
   });
-  const [customTagInput, setCustomTagInput] = useState("");
 
+  // Calculate available tags from collection & parent collections hierarchy
   const availableCollectionTags = getInheritedTags(values.collectionId, collections);
+
+  // Combine available collection tags with any tags already assigned to this post
+  const allSelectableTags = Array.from(
+    new Set([...availableCollectionTags, ...(values.tags ?? [])])
+  );
 
   const toggleTag = (tag: string) => {
     setValues((prev) => {
@@ -42,25 +47,6 @@ export function PostFormModal({
         tags: hasTag ? currentTags.filter((t) => t !== tag) : [...currentTags, tag],
       };
     });
-  };
-
-  const handleAddCustomTag = () => {
-    const trimmed = customTagInput.trim().toLowerCase().replace(/^#/, "");
-    if (!trimmed) return;
-    if (!values.tags?.includes(trimmed)) {
-      setValues((prev) => ({
-        ...prev,
-        tags: [...(prev.tags ?? []), trimmed],
-      }));
-    }
-    setCustomTagInput("");
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      handleAddCustomTag();
-    }
   };
 
   return (
@@ -108,10 +94,10 @@ export function PostFormModal({
           </div>
         </FieldWrapper>
 
-        <FieldWrapper label="Select Collection Tags">
-          {availableCollectionTags.length > 0 ? (
+        <FieldWrapper label="Select Tags">
+          {allSelectableTags.length > 0 ? (
             <div className="tag-chips-selectable">
-              {availableCollectionTags.map((tag) => {
+              {allSelectableTags.map((tag) => {
                 const isSelected = (values.tags ?? []).includes(tag);
                 return (
                   <button
@@ -128,42 +114,9 @@ export function PostFormModal({
             </div>
           ) : (
             <p className="tag-hint-text">
-              No tags defined on this collection or its parent collections yet. You can add tags in collection settings or add a custom tag below.
+              No tags created for this collection yet. Tags can be created when creating or editing a collection.
             </p>
           )}
-        </FieldWrapper>
-
-        <FieldWrapper label="Custom / Selected Tags">
-          <div className="tag-manager">
-            <div className="tag-input-row">
-              <TextInput
-                value={customTagInput}
-                onChange={(e) => setCustomTagInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Add custom tag..."
-              />
-              <Button type="button" variant="secondary" onClick={handleAddCustomTag} disabled={!customTagInput.trim()}>
-                Add Tag
-              </Button>
-            </div>
-            {(values.tags ?? []).length > 0 && (
-              <div className="tag-chips-list" style={{ marginTop: "0.5rem" }}>
-                {(values.tags ?? []).map((tag) => (
-                  <span key={tag} className="tag-chip tag-chip--editable">
-                    #{tag}
-                    <button
-                      type="button"
-                      className="tag-chip__remove"
-                      onClick={() => toggleTag(tag)}
-                      aria-label={`Remove tag ${tag}`}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
         </FieldWrapper>
 
         <FieldWrapper label="Description">

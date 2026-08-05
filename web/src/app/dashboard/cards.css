@@ -432,8 +432,24 @@
 
 .tag-input-row {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 0.5rem;
+  width: 100%;
+}
+
+.tag-input-row .field__control,
+.tag-input-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.tag-input-row .btn,
+.tag-input-row button {
+  flex-shrink: 0;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tag-chips-list,
