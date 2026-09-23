@@ -13,7 +13,9 @@
     "http://localhost/*",
     "http://127.0.0.1/*",
     "https://*.web.app/*",
-    "https://*.firebaseapp.com/*"
+    "https://*.firebaseapp.com/*",
+    "https://*.vercel.app/*",
+    "https://social-save-allz.vercel.app/*"
   ],
   "action": {
     "default_icon": {
@@ -36,7 +38,9 @@
         "http://localhost/*",
         "http://127.0.0.1/*",
         "https://*.web.app/*",
-        "https://*.firebaseapp.com/*"
+        "https://*.firebaseapp.com/*",
+        "https://*.vercel.app/*",
+        "https://social-save-allz.vercel.app/*"
       ],
       "js": ["content.js"],
       "run_at": "document_start"

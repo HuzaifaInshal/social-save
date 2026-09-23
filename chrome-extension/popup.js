@@ -28,11 +28,12 @@ chrome.storage.local.get(["lastSelectedCollectionId"], (res) => {
 });
 
 const webAppPatterns = [
-  "*://localhost/*",
-  "*://127.0.0.1/*",
-  "*://social-save.vercel.app/*",
+  "*://social-save-allz.vercel.app/*",
+  "*://*.vercel.app/*",
   "*://*.web.app/*",
-  "*://*.firebaseapp.com/*"
+  "*://*.firebaseapp.com/*",
+  "*://localhost/*",
+  "*://127.0.0.1/*"
 ];
 
 // Helper to find a web app tab
@@ -42,7 +43,15 @@ async function findWebAppTab() {
       chrome.tabs.query({ url: pattern }, resolve);
     });
     if (tabs && tabs.length > 0) {
-      return tabs[0];
+      for (const tab of tabs) {
+        if (pattern.includes("localhost") || pattern.includes("127.0.0.1")) {
+          if (tab.title?.toLowerCase().includes("social save") || tab.url?.includes("connect-extension")) {
+            return tab;
+          }
+        } else {
+          return tab;
+        }
+      }
     }
   }
   return null;
@@ -56,7 +65,7 @@ async function getConnectUrl() {
       return `${parsed.origin}/connect-extension`;
     } catch {}
   }
-  return "http://localhost:3000/connect-extension";
+  return "https://social-save-allz.vercel.app/connect-extension";
 }
 
 // Show a specific UI state
@@ -493,7 +502,31 @@ async function initPanel() {
   const normalizeUrl = (u) => {
     try {
       const parsed = new URL(u);
-      return parsed.origin + parsed.pathname.replace(/\/$/, "");
+      const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+      let pathname = parsed.pathname;
+      if (pathname.length > 1 && pathname.endsWith("/")) {
+        pathname = pathname.slice(0, -1);
+      }
+
+      const trackingParams = new Set([
+        "ref", "ref_src", "ref_url", "utm_source", "utm_medium",
+        "utm_campaign", "utm_term", "utm_content", "fbclid", "gclid",
+        "igshid", "si", "feature", "locale", "t", "_hsenc", "_hsmi"
+      ]);
+
+      const params = new URLSearchParams();
+      const keys = Array.from(parsed.searchParams.keys()).sort();
+      for (const key of keys) {
+        if (!trackingParams.has(key.toLowerCase())) {
+          const vals = parsed.searchParams.getAll(key);
+          for (const val of vals) {
+            params.append(key, val);
+          }
+        }
+      }
+
+      const queryString = params.toString();
+      return `${parsed.protocol}//${host}${pathname}${queryString ? "?" + queryString : ""}`;
     } catch {
       return u;
     }
